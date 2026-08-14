@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Question Practice Bank — PlacementPro{% endblock %}
+{% block page_title %}Practice Bank{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'quiz:home' %}">Quiz</a> /
+  <span>Practice Bank</span>
+  {% if resolved_subject %} / <span>{{ resolved_subject.name }}</span>{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Question <span>Practice Bank</span> 📚</h1>
+    <p class="dash-subtitle">
+      {% if resolved_subject %}
+        Practising: <strong>{{ resolved_subject.name }}</strong> —
+      {% endif %}
+      Filter by subject, difficulty or language. Answer each question to see instant feedback.
+    </p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'quiz:bookmarks' %}" class="dash-btn-outline"><i class="bi bi-bookmark-fill me-1"></i> Bookmarks</a>
+    <a href="{% url 'quiz:home' %}" class="dash-btn-outline"><i class="bi bi-arrow-left me-1"></i> Quizzes</a>
+  </div>
+</div>
+
+<!-- Filters Form -->
+<div class="dash-card mb-4">
+  <form method="GET" action="{% url 'quiz:practice' %}" id="filter-form">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Filter by Subject</label>
+        <select name="subject" class="form-select" onchange="this.form.submit()">
+          <option value="">-- All Subjects --</option>
+          {% for s in subjects %}
+          <option value="{{ s.pk }}"
+            {% if selected_subject == s.pk|stringformat:"s" %}selected{% endif %}>
+            {{ s.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Filter by Difficulty</label>
+        <select name="difficulty" class="form-select" onchange="this.form.submit()">
+          <option value="">-- All Difficulties --</option>
+          <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>🟢 Easy</option>
+          <option value="medium" {% if selected_difficulty == 'medium' %}selected{% endif %}>🟡 Medium</option>
+          <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>🔴 Hard</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Language</label>
+        <select name="language" class="form-select" onchange="this.form.submit()">
+          <option value="">-- All Languages --</option>
+          <option value="python" {% if selected_language == 'python' %}selected{% endif %}>Python</option>
+          <option value="java" {% if selected_language == 'java' %}selected{% endif %}>Java</option>
+          <option value="cpp" {% if selected_language == 'cpp' %}selected{% endif %}>C++</option>
+          <option value="c" {% if selected_language == 'c' %}selected{% endif %}>C</option>
+          <option value="sql" {% if selected_language == 'sql' %}selected{% endif %}>SQL</option>
+          <option value="javascript" {% if selected_language == 'javascript' %}selected{% endif %}>JavaScript</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <a href="{% url 'quiz:practice' %}" class="btn btn-outline-secondary w-100">
+          <i class="bi bi-x-circle me-1"></i> Clear
+        </a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Stats Bar -->
+{% if questions %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div class="text-muted small">
+    Showing <strong>{{ questions|length }}</strong> of <strong>{{ total_count }}</strong> questions
+    {% if resolved_subject %}in <strong>{{ resolved_subject.name }}</strong>{% endif %}
+    <span id="session-score-badge" class="ms-3 badge bg-primary" style="display:none!important">
+      Score: <span id="session-correct">0</span> / <span id="session-answered">0</span>
+    </span>
+  </div>
+  <div id="session-score-wrapper" style="display:none">
+    <span class="badge bg-success fs-6" id="session-score-display">Score: 0 / 0</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- Subject Not Found Warning -->
+{% if subject_not_found %}
+<div class="alert alert-warning mb-4">
+  <i class="bi bi-exclamation-triangle me-2"></i>
+  No subject found matching "<strong>{{ selected_subject_name }}</strong>".
+  Try selecting from the filter above.
+</div>
+{% endif %}
+
+<!-- Questions List -->
+{% if questions %}
+<div class="vstack gap-4" id="questions-container">
+  {% for q in questions %}
+  <div class="dash-card" id="q-card-{{ q.pk }}">
+    <!-- Question Header -->
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+      <div>
+        <span class="badge bg-secondary me-1">Q{{ forloop.counter }}</span>
+        {% if q.subject %}
+        <span class="badge bg-primary me-1">{{ q.subject.name }}</span>
+        {% endif %}
+        <span class="badge {% if q.difficulty == 'easy' %}bg-success{% elif q.difficulty == 'hard' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+          {{ q.get_difficulty_display }}
+        </span>
+        {% if q.language != 'general' %}
+        <span class="badge bg-info text-dark ms-1">{{ q.language|upper }}</span>
+        {% endif %}
+      </div>
+      <button class="btn btn-sm bookmark-btn {% if q.pk in bookmarked_ids %}btn-warning{% else %}btn-outline-warning{% endif %}"
+              onclick="toggleBookmark({{ q.pk }}, this)" title="Bookmark this question">
+        <i class="bi {% if q.pk in bookmarked_ids %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+      </button>
+    </div>
+
+    <!-- Question Text -->
+    <p class="fw-semibold text-dark mb-3 fs-6" style="line-height:1.6">{{ q.question_text }}</p>
+
+    <!-- Options — interactive, not a form submit -->
+    <div class="vstack gap-2 mb-3 options-group" id="options-{{ q.pk }}" data-qid="{{ q.pk }}">
+      {% for letter, text in q.get_options.items %}
+      <button type="button"
+              class="option-btn d-flex align-items-center gap-3 p-3 rounded border text-start w-100"
+              style="background:var(--surface);border-color:var(--border);transition:all .2s;cursor:pointer;"
+              onclick="selectOption({{ q.pk }}, '{{ letter }}')"
+              id="opt-{{ q.pk }}-{{ letter }}"
+              data-letter="{{ letter }}">
+        <span class="option-letter fw-bold text-primary"
+              style="min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+                     border-radius:50%;border:2px solid var(--primary);font-size:.85rem;">
+          {{ letter }}
+        </span>
+        <span class="option-text" style="flex:1;font-size:.95rem;">{{ text }}</span>
+        <span class="option-result" style="display:none;font-size:1.2rem;"></span>
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- Answer Section (hidden until answered) -->
+    <div id="answer-section-{{ q.pk }}" style="display:none;">
+      <div id="answer-feedback-{{ q.pk }}" class="p-3 rounded mb-2" style="border-left:4px solid transparent;"></div>
+      <div class="p-3 bg-light rounded" style="border-left:4px solid #10b981">
+        <strong class="text-success d-block mb-1"><i class="bi bi-lightbulb me-1"></i> Explanation</strong>
+        <p class="text-secondary small mb-0" id="explanation-{{ q.pk }}"></p>
+      </div>
+    </div>
+
+    <!-- Retry / Next hint -->
+    <div id="next-hint-{{ q.pk }}" class="mt-2 text-muted small" style="display:none">
+      ✅ Answered — scroll down for next question
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<nav class="mt-4 d-flex justify-content-center">
+  <ul class="pagination">
+    {% if has_prev %}
+    <li class="page-item">
+      <a class="page-link" href="?subject={{ selected_subject }}&difficulty={{ selected_difficulty }}&language={{ selected_language }}&page={{ page|add:'-1' }}">
+        <i class="bi bi-arrow-left"></i> Previous
+      </a>
+    </li>
+    {% endif %}
+    <li class="page-item disabled">
+      <span class="page-link">Page {{ page }} of {{ total_pages }}</span>
+    </li>
+    {% if has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?subject={{ selected_subject }}&difficulty={{ selected_difficulty }}&language={{ selected_language }}&page={{ page|add:'1' }}">
+        Next <i class="bi bi-arrow-right"></i>
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="dash-card text-center py-5">
+  <i class="bi bi-journal-x display-4 text-muted mb-3"></i>
+  <h4 class="fw-bold">No Questions Found</h4>
+  {% if subject_not_found %}
+  <p class="text-muted">Subject "<strong>{{ selected_subject_name }}</strong>" was not found in the database.</p>
+  {% elif resolved_subject %}
+  <p class="text-muted">No <strong>{{ resolved_subject.name }}</strong> questions match your filters yet.</p>
+  <p class="text-muted small">Try clearing the difficulty or language filter, or check back later when more questions are added.</p>
+  {% else %}
+  <p class="text-muted">Try clearing your filters or select a different subject.</p>
+  {% endif %}
+  <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
+    <a href="{% url 'quiz:practice' %}" class="dash-btn-primary">
+      <i class="bi bi-funnel me-1"></i> Clear Filters
+    </a>
+    <a href="{% url 'quiz:home' %}" class="dash-btn-outline">
+      <i class="bi bi-house me-1"></i> Quiz Home
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Session Score Footer (fixed) -->
+<div id="session-score-footer" class="position-fixed bottom-0 start-50 translate-middle-x mb-3"
+     style="display:none;z-index:1050;">
+  <div class="badge bg-dark text-white p-3 rounded-pill shadow fs-6">
+    <i class="bi bi-trophy-fill text-warning me-2"></i>
+    Session: <span id="footer-correct">0</span> correct / <span id="footer-answered">0</span> answered
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Session tracking
+// ---------------------------------------------------------------------------
+let sessionCorrect = 0;
+let sessionAnswered = 0;
+const csrfToken = '{{ csrf_token }}';
+
+function updateSessionScore() {
+  const footer = document.getElementById('session-score-footer');
+  const wrapper = document.getElementById('session-score-wrapper');
+  if (sessionAnswered > 0) {
+    footer.style.display = 'block';
+    if (wrapper) wrapper.style.display = 'block';
+  }
+  const scoreText = `${sessionCorrect} / ${sessionAnswered}`;
+  ['footer-correct', 'footer-answered'].forEach((id, idx) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = idx === 0 ? sessionCorrect : sessionAnswered;
+  });
+  const disp = document.getElementById('session-score-display');
+  if (disp) disp.textContent = `Score: ${scoreText}`;
+}
+
+// ---------------------------------------------------------------------------
+// Select option & check answer
+// ---------------------------------------------------------------------------
+function selectOption(qId, letter) {
+  const group = document.getElementById('options-' + qId);
+  if (!group) return;
+
+  // Prevent re-answering
+  if (group.dataset.answered === '1') return;
+
+  // Disable all options
+  group.dataset.answered = '1';
+  const buttons = group.querySelectorAll('.option-btn');
+  buttons.forEach(b => { b.style.pointerEvents = 'none'; b.style.opacity = '.85'; });
+
+  // Highlight selected
+  const selectedBtn = document.getElementById('opt-' + qId + '-' + letter);
+  if (selectedBtn) {
+    selectedBtn.style.borderColor = '#6366f1';
+    selectedBtn.style.background = 'rgba(99,102,241,.1)';
+  }
+
+  // POST to check_answer
+  const formData = new FormData();
+  formData.append('answer', letter);
+
+  fetch('{% url "quiz:check_answer" 0 %}'.replace('0', qId), {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken },
+    body: formData
+  })
+  .then(r => r.json())
+  .then(data => {
+    applyFeedback(qId, letter, data);
+    sessionAnswered++;
+    if (data.is_correct) sessionCorrect++;
+    updateSessionScore();
+  })
+  .catch(() => {
+    const sec = document.getElementById('answer-section-' + qId);
+    if (sec) {
+      sec.style.display = 'block';
+      const fb = document.getElementById('answer-feedback-' + qId);
+      if (fb) fb.innerHTML = '<span class="text-danger">Could not check answer. Please try again.</span>';
+    }
+  });
+}
+
+function applyFeedback(qId, selected, data) {
+  const correct = data.correct_answer;
+  const isCorrect = data.is_correct;
+
+  // Colour buttons
+  const group = document.getElementById('options-' + qId);
+  if (group) {
+    ['A','B','C','D'].forEach(ltr => {
+      const btn = document.getElementById('opt-' + qId + '-' + ltr);
+      if (!btn) return;
+      const resultSpan = btn.querySelector('.option-result');
+      if (ltr === correct) {
+        btn.style.borderColor = '#10b981';
+        btn.style.background = 'rgba(16,185,129,.12)';
+        if (resultSpan) { resultSpan.textContent = '✅'; resultSpan.style.display = ''; }
+      } else if (ltr === selected && !isCorrect) {
+        btn.style.borderColor = '#ef4444';
+        btn.style.background = 'rgba(239,68,68,.12)';
+        if (resultSpan) { resultSpan.textContent = '❌'; resultSpan.style.display = ''; }
+      }
+    });
+  }
+
+  // Show answer section
+  const sec = document.getElementById('answer-section-' + qId);
+  if (sec) sec.style.display = 'block';
+
+  const fb = document.getElementById('answer-feedback-' + qId);
+  if (fb) {
+    if (isCorrect) {
+      fb.style.borderColor = '#10b981';
+      fb.style.background = 'rgba(16,185,129,.1)';
+      fb.innerHTML = '<strong class="text-success">🎉 Correct!</strong> Well done.';
+    } else {
+      fb.style.borderColor = '#ef4444';
+      fb.style.background = 'rgba(239,68,68,.08)';
+      fb.innerHTML = `<strong class="text-danger">❌ Incorrect.</strong> The correct answer is <strong class="text-success">Option ${correct}</strong>.`;
+    }
+  }
+
+  const exp = document.getElementById('explanation-' + qId);
+  if (exp) exp.textContent = data.explanation || 'No explanation available.';
+
+  const hint = document.getElementById('next-hint-' + qId);
+  if (hint) hint.style.display = 'block';
+}
+
+// ---------------------------------------------------------------------------
+// Bookmark toggle
+// ---------------------------------------------------------------------------
+function toggleBookmark(qId, btn) {
+  fetch('/quiz/bookmark/' + qId + '/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.bookmarked) {
+      btn.className = 'btn btn-sm btn-warning';
+      btn.innerHTML = '<i class="bi bi-bookmark-fill"></i>';
+      btn.title = 'Remove bookmark';
+    } else {
+      btn.className = 'btn btn-sm btn-outline-warning';
+      btn.innerHTML = '<i class="bi bi-bookmark"></i>';
+      btn.title = 'Bookmark this question';
+    }
+  });
+}
+</script>
+{% endblock %}

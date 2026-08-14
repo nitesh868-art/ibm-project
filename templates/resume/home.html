@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Resume Builder{% endblock %}
+{% block page_title %}Resume Builder{% endblock %}
+{% block breadcrumb %}Tools / Resume Builder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h4 class="fw-800 mb-1">ATS Resume Builder 📄</h4>
+    <p class="text-muted mb-0" style="font-size:14px;">Build recruiter-approved, ATS-friendly resumes with instant AI scoring</p>
+  </div>
+  <a href="{% url 'resume_builder:create' %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-plus-lg me-1"></i> Create New Resume
+  </a>
+</div>
+
+{% if resumes %}
+<div class="row g-4">
+  {% for resume in resumes %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title text-truncate mb-0">{{ resume.title }}</h6>
+        <span class="badge {% if resume.ats_score >= 80 %}bg-success{% elif resume.ats_score >= 50 %}bg-warning{% else %}bg-secondary{% endif %}">
+          ATS: {{ resume.ats_score }}%
+        </span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-2" style="font-size:13px;"><i class="bi bi-person me-1"></i>{{ resume.full_name }}</p>
+        <p class="text-muted mb-2" style="font-size:13px;"><i class="bi bi-envelope me-1"></i>{{ resume.email }}</p>
+        <p class="text-muted mb-3" style="font-size:12px;"><i class="bi bi-clock me-1"></i>Updated: {{ resume.updated_at|date:"d M Y" }}</p>
+
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'resume_builder:edit' resume.pk %}" class="btn btn-outline-primary btn-sm flex-fill">
+            <i class="bi bi-pencil me-1"></i> Edit
+          </a>
+          <a href="{% url 'resume_builder:preview' resume.pk %}" class="btn btn-outline-secondary btn-sm flex-fill">
+            <i class="bi bi-eye me-1"></i> Preview
+          </a>
+          <a href="{% url 'resume_builder:download_pdf' resume.pk %}" class="btn btn-success btn-sm">
+            <i class="bi bi-download"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card text-center py-5">
+  <div class="card-body">
+    <i class="bi bi-file-earmark-person display-3 text-primary mb-3"></i>
+    <h5>No Resumes Created Yet</h5>
+    <p class="text-muted" style="font-size:14px;">Build your professional, ATS-optimized resume in minutes with ReportLab PDF generation!</p>
+    <a href="{% url 'resume_builder:create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i> Create Resume Now
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

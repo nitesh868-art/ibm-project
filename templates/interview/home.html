@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Interview Preparation Hub — PlacementPro{% endblock %}
+{% block page_title %}Interview Prep Hub{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Interview <span>Preparation Hub</span> &#127908;</h1>
+    <p class="dash-subtitle">Master HR interviews, technical rounds &amp; generate custom AI interview questions</p>
+  </div>
+  <div>
+    <a href="{% url 'interview:ai_practice' %}" class="dash-btn-primary"><i class="bi bi-robot me-1"></i> AI Mock Interview</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="bg-primary text-white p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-person-video2 fs-3"></i></div>
+        <h5 class="fw-bold text-dark mb-1">HR Questions</h5>
+        <p class="text-secondary small mb-3">STAR technique answers for common HR prompts</p>
+      </div>
+      <a href="{% url 'interview:hr_questions' %}" class="dash-btn-outline btn-sm">View HR Guide &rarr;</a>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="bg-success text-white p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-code-square fs-3"></i></div>
+        <h5 class="fw-bold text-dark mb-1">Technical Rounds</h5>
+        <p class="text-secondary small mb-3">DSA, OOPs, DBMS &amp; OS interview questions</p>
+      </div>
+      <a href="{% url 'interview:technical' %}" class="dash-btn-outline btn-sm">View Technical &rarr;</a>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="bg-warning text-dark p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-cpu fs-3"></i></div>
+        <h5 class="fw-bold text-dark mb-1">AI Practice</h5>
+        <p class="text-secondary small mb-3">Generate role &amp; company specific questions</p>
+      </div>
+      <a href="{% url 'interview:ai_practice' %}" class="dash-btn-primary btn-sm">Start AI Practice &rarr;</a>
+    </div>
+  </div>
+
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="bg-info text-dark p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-lightbulb fs-3"></i></div>
+        <h5 class="fw-bold text-dark mb-1">Interview Tips</h5>
+        <p class="text-secondary small mb-3">Dos, don'ts, body language &amp; preparation strategy</p>
+      </div>
+      <a href="{% url 'interview:tips' %}" class="dash-btn-outline btn-sm">Read Tips &rarr;</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

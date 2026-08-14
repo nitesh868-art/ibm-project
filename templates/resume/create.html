@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Create New Resume — PlacementPro{% endblock %}
+{% block page_title %}Create Resume{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Create New <span>Resume</span> &#128221;</h1>
+    <p class="dash-subtitle">Build a professional, ATS-optimized resume in minutes</p>
+  </div>
+  <div>
+    <a href="{% url 'resume_builder:home' %}" class="dash-btn-outline">&larr; Back to Resumes</a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="dash-card">
+      <form method="POST" action="{% url 'resume_builder:create' %}">
+        {% csrf_token %}
+
+        <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-file-earmark-person-fill text-primary me-2"></i>Basic Information</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Resume Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. SDE Resume 2026" value="My Resume" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Choose Template</label>
+            <select name="template" class="form-select">
+              {% for val, label in templates %}
+              <option value="{{ val }}" {% if val == 'modern' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-person-badge text-indigo me-2"></i>Contact Details</h5>
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+            <input type="text" name="full_name" class="form-control" placeholder="e.g. Rahul Sharma" value="{{ user.get_full_name }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+            <input type="email" name="email" class="form-control" placeholder="e.g. rahul@example.com" value="{{ user.email }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Phone Number</label>
+            <input type="text" name="phone" class="form-control" placeholder="e.g. +91 9876543210">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Location</label>
+            <input type="text" name="location" class="form-control" placeholder="e.g. Bangalore, India">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">LinkedIn Profile</label>
+            <input type="url" name="linkedin" class="form-control" placeholder="https://linkedin.com/in/username">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">GitHub Profile</label>
+            <input type="url" name="github" class="form-control" placeholder="https://github.com/username">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Portfolio Website</label>
+            <input type="url" name="portfolio" class="form-control" placeholder="https://yourportfolio.com">
+          </div>
+        </div>
+
+        <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-card-text text-success me-2"></i>Professional Summary</h5>
+        <div class="mb-4">
+          <textarea name="summary" class="form-control" rows="4" placeholder="Briefly introduce your career goals, key strengths, and passion for software engineering..."></textarea>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{% url 'resume_builder:home' %}" class="dash-btn-outline">Cancel</a>
+          <button type="submit" class="dash-btn-primary"><i class="bi bi-check-circle me-1"></i> Save & Continue to Sections</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

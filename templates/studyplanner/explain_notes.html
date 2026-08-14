@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}AI Notes Explanation — {{ material.title }}{% endblock %}
+{% block page_title %}AI Notes Analysis{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">AI Analysis: <span>{{ material.title }}</span> &#129302;</h1>
+    <p class="dash-subtitle">Personalized breakdown, key definitions, 2-mark & 7-mark exam questions generated from notes</p>
+  </div>
+  <div>
+    <a href="{% url 'studyplanner:materials' %}" class="dash-btn-outline">&larr; Back to My Notes</a>
+  </div>
+</div>
+
+<!-- Document Pipeline Status Bar -->
+<div class="dash-card mb-4 bg-light">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <span class="badge bg-primary me-2"><i class="bi bi-file-earmark-text me-1"></i> {{ material.get_material_type_display }}</span>
+      <span class="badge bg-secondary me-2"><i class="bi bi-book me-1"></i> {{ material.page_count|default:1 }} Page(s)</span>
+      <span class="badge {% if material.is_scanned %}bg-warning text-dark{% else %}bg-success{% endif %}">
+        {% if material.is_scanned %}<i class="bi bi-exclamation-triangle me-1"></i> OCR Required (Scanned PDF){% else %}<i class="bi bi-check-circle me-1"></i> Selectable Text Extracted{% endif %}
+      </span>
+    </div>
+    <div class="small text-muted">
+      Uploaded {{ material.created_at|date:"M d, Y" }}
+    </div>
+  </div>
+
+  {% if material.is_scanned %}
+  <div class="alert alert-warning mt-3 mb-0 d-flex align-items-center gap-2">
+    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+    <div>
+      <strong>Scanned / Image-Only Document Detected:</strong>
+      Text extraction found no selectable text on image pages. Optical Character Recognition (OCR) is required to parse scanned text. AI overview and questions below are generated based on topic metadata.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Ask Questions About Document Form -->
+<div class="dash-card mb-4 border-start border-4 border-info">
+  <h5 class="fw-bold text-dark mb-2"><i class="bi bi-question-circle-fill text-info me-2"></i>Ask Questions About This Document</h5>
+  <p class="text-muted small mb-3">Ask any question and AI will search your uploaded document context for the answer.</p>
+
+  <form method="POST" action="{% url 'studyplanner:explain_notes' pk=material.pk %}">
+    {% csrf_token %}
+    <div class="input-group">
+      <input type="text" name="doc_question" class="form-control" placeholder="e.g. What are the key properties mentioned in chapter 1?" value="{{ doc_question }}">
+      <button type="submit" class="dash-btn-primary"><i class="bi bi-send me-1"></i> Ask Document</button>
+    </div>
+  </form>
+
+  {% if doc_answer %}
+  <div class="p-3 bg-white border rounded mt-3 border-start border-3 border-info">
+    <strong class="text-info d-block mb-1"><i class="bi bi-robot me-1"></i> Document AI Answer:</strong>
+    <p class="text-dark mb-0 lh-lg" style="white-space: pre-wrap;">{{ doc_answer }}</p>
+  </div>
+  {% endif %}
+</div>
+
+{% if analysis %}
+<!-- Summary Box -->
+<div class="dash-card mb-4 border-start border-4 border-primary">
+  <h5 class="fw-bold text-dark mb-2"><i class="bi bi-card-text text-primary me-2"></i>Executive Summary</h5>
+  <p class="text-secondary mb-0 style-15">{{ analysis.summary }}</p>
+</div>
+
+<!-- Simple Breakdown -->
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3"><i class="bi bi-lightbulb-fill text-warning me-2"></i>Simple Explanation (Beginner Analogy)</h5>
+  <p class="text-dark lh-lg" style="font-size:15px">{{ analysis.simple_explanation }}</p>
+</div>
+
+<!-- Flashcards Section -->
+{% if analysis.flashcards %}
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3"><i class="bi bi-journals text-primary me-2"></i>Revision Flashcards</h5>
+  <div class="row g-3">
+    {% for fc in analysis.flashcards %}
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 bg-light rounded border h-100 shadow-sm">
+        <span class="badge bg-primary-subtle text-primary mb-2">Card {{ forloop.counter }}</span>
+        <h6 class="fw-bold text-dark mb-2">{{ fc.front }}</h6>
+        <p class="text-secondary small mb-0 border-top pt-2 mt-2">{{ fc.back }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- 2-Mark & 7-Mark Exam Questions Grid -->
+<div class="row g-4 mb-4">
+  <!-- 2-Mark Questions -->
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-patch-check-fill text-success me-2"></i>2-Mark Short Exam Questions</h5>
+      {% for q in analysis.two_mark_questions %}
+      <div class="p-3 bg-light rounded mb-2 border-start border-3 border-success">
+        <strong class="d-block text-dark small mb-1">Q{{ forloop.counter }}: {{ q.question }}</strong>
+        <p class="text-muted small mb-0">Ans: {{ q.answer }}</p>
+      </div>
+      {% empty %}
+      <p class="text-muted small">No short questions generated.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 7-Mark Questions -->
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-journal-text text-indigo me-2"></i>7-Mark Detailed Exam Questions</h5>
+      {% for q in analysis.seven_mark_questions %}
+      <div class="p-3 bg-light rounded mb-2 border-start border-3 border-indigo">
+        <strong class="d-block text-dark small mb-1">Q{{ forloop.counter }}: {{ q.question }}</strong>
+        <p class="text-muted small mb-0">Hint: {{ q.hints }}</p>
+      </div>
+      {% empty %}
+      <p class="text-muted small">No detailed questions generated.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- MCQs Section -->
+{% if analysis.mcqs %}
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3"><i class="bi bi-list-check text-success me-2"></i>Practice MCQs</h5>
+  <div class="row g-3">
+    {% for m in analysis.mcqs %}
+    <div class="col-md-6">
+      <div class="p-3 bg-light rounded border">
+        <strong class="d-block text-dark mb-2">Q{{ forloop.counter }}: {{ m.question }}</strong>
+        <ul class="list-unstyled mb-2 small text-secondary">
+          {% for opt in m.options %}
+          <li>{{ opt }}</li>
+          {% endfor %}
+        </ul>
+        <span class="badge bg-success small">Correct Answer: Option {{ m.correct }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="dash-card text-center py-5">
+  <div class="display-4 text-warning mb-3"><i class="bi bi-exclamation-triangle"></i></div>
+  <h4 class="fw-bold text-dark">AI Explanation Unavailable</h4>
+  <p class="text-muted max-w-md mx-auto mb-4">{{ user_error|default:"AI service is temporarily unavailable. Please try again." }} Your notes are safely stored.</p>
+  <a href="{% url 'studyplanner:materials' %}" class="dash-btn-primary d-inline-flex">Return to My Notes</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,60 @@
+# =============================================================================
+# AI Career & Academic Copilot — .gitignore
+# =============================================================================
+
+# Environment variables — NEVER commit this file
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Static files (collected)
+staticfiles/
+
+# PyCharm / VS Code / JetBrains
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets / keys
+*.pem
+*.key

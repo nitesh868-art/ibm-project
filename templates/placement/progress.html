@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Placement Progress — PlacementPro{% endblock %}
+{% block page_title %}My Progress{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Placement <span>Preparation Progress</span> &#128200;</h1>
+    <p class="dash-subtitle">Track mock test attempts, subject averages, and bookmarked questions</p>
+  </div>
+  <div>
+    <a href="{% url 'placement:home' %}" class="dash-btn-outline">&larr; Back to Placement Prep</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Subject Averages -->
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3">Subject Performance</h5>
+      {% if avg_by_subject %}
+      {% for subj, avg in avg_by_subject.items %}
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="fw-semibold text-dark">{{ subj }}</span>
+          <span class="fw-bold text-primary">{{ avg }}%</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar bg-primary js-subj-bar" role="progressbar" data-width="{{ avg }}"></div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p class="text-muted small">Complete mock tests to view subject breakdown.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Bookmarks Summary -->
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3">Bookmarked Questions</h5>
+      <p class="text-secondary small mb-3">You have {{ bookmarks|length }} saved questions for review.</p>
+      <a href="{% url 'quiz:bookmarks' %}" class="dash-btn-outline btn-sm d-inline-flex"><i class="bi bi-bookmark-star me-1"></i> View All Bookmarks</a>
+    </div>
+  </div>
+</div>
+
+<!-- Attempts History -->
+<div class="dash-card">
+  <h5 class="fw-bold text-dark mb-3">Test Attempt History</h5>
+  {% if attempts %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Test Title</th>
+          <th>Date</th>
+          <th>Score</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in attempts %}
+        <tr>
+          <td><strong class="text-dark">{{ a.test.title }}</strong></td>
+          <td class="text-muted small">{{ a.started_at|date:"d M Y" }}</td>
+          <td><span class="badge {% if a.passed %}bg-success{% else %}bg-danger{% endif %} fs-6">{{ a.percentage }}%</span></td>
+          <td><a href="{% url 'quiz:test_result' pk=a.pk %}" class="btn btn-sm btn-outline-primary">View Report</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted small">No completed attempts recorded.</p>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.js-subj-bar').forEach(function(el) {
+    var w = parseInt(el.getAttribute('data-width'), 10) || 0;
+    el.style.width = Math.min(Math.max(w, 0), 100) + '%';
+  });
+});
+</script>
+{% endblock %}

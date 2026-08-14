@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Contact Us{% endblock %}
+{% block body_class %}landing-body{% endblock %}
+
+{% block full_page %}
+<nav class="landing-navbar scrolled" style="background:white !important; position:relative;">
+  <div class="container d-flex align-items-center justify-content-between py-3">
+    <a href="{% url 'core:landing' %}" class="d-flex align-items-center gap-2">
+      <div class="sidebar-brand-logo">🎓</div>
+      <span style="font-size:18px;font-weight:800;color:#1e293b;">PlacementPro</span>
+    </a>
+    <div class="d-flex gap-2">
+      <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">Login</a>
+      <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Register</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-5" style="max-width:700px; margin-top:80px;">
+  <div class="text-center mb-5">
+    <span class="section-badge">📬 Get In Touch</span>
+    <h2 class="section-title">Contact Us</h2>
+    <p class="section-subtitle">Have questions? We'd love to hear from you. Send us a message!</p>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+          {{ message }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'core:contact' %}">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Your Name *</label>
+            <input type="text" name="name" class="form-control" placeholder="John Doe" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email Address *</label>
+            <input type="email" name="email" class="form-control" placeholder="john@example.com" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Subject</label>
+            <input type="text" name="subject" class="form-control" placeholder="How can we help?">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Message *</label>
+            <textarea name="message" class="form-control" rows="5" placeholder="Type your message here..." required></textarea>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="bi bi-send me-2"></i> Send Message
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock full_page %}

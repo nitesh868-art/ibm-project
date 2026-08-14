@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block breadcrumb %}Account / Profile{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Profile Summary Card -->
+  <div class="col-lg-4">
+    <div class="card text-center">
+      <div class="card-body p-4">
+        {% if request.user.profile_picture %}
+          <img src="{{ request.user.profile_picture.url }}"
+               class="rounded-circle mb-3" style="width:100px;height:100px;object-fit:cover;border:4px solid var(--primary);">
+        {% else %}
+          <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle fw-bold text-white"
+               style="width:100px;height:100px;background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:36px;">
+            {{ request.user.first_name.0|upper }}{{ request.user.last_name.0|upper }}
+          </div>
+        {% endif %}
+        <h5 class="fw-bold mb-1">{{ request.user.get_full_name }}</h5>
+        <p class="text-muted mb-2" style="font-size:13px;">@{{ request.user.username }}</p>
+        <span class="badge bg-primary">{{ request.user.get_role_display }}</span>
+
+        {% if student_profile %}
+        <hr>
+        <div class="text-start">
+          <div class="d-flex justify-content-between mb-2">
+            <small class="text-muted">Profile Completion</small>
+            <small class="fw-bold text-primary">{{ student_profile.profile_completion }}%</small>
+          </div>
+          <div class="progress mb-3" style="height:8px;">
+            <div class="progress-bar js-profile-bar" data-width="{{ student_profile.profile_completion }}"></div>
+          </div>
+          <div class="d-flex flex-column gap-1" style="font-size:13px;">
+            <div><i class="bi bi-mortarboard me-2 text-primary"></i> {{ student_profile.get_branch_display }} — Year {{ student_profile.year }}</div>
+            <div><i class="bi bi-star me-2 text-warning"></i> CGPA: {{ student_profile.cgpa }}</div>
+            <div><i class="bi bi-fire me-2 text-danger"></i> Study Streak: {{ student_profile.study_streak }} days</div>
+            <div><i class="bi bi-trophy me-2 text-success"></i> Points: {{ student_profile.total_points }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card mt-3">
+      <div class="card-header"><h6 class="card-title">Quick Links</h6></div>
+      <div class="card-body p-2">
+        <a href="{% url 'dashboard:home' %}" class="d-block px-3 py-2 rounded text-decoration-none text-muted" style="font-size:14px; transition:background .2s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">
+          <i class="bi bi-grid me-2"></i> Dashboard
+        </a>
+        <a href="{% url 'resume_builder:home' %}" class="d-block px-3 py-2 rounded text-decoration-none text-muted" style="font-size:14px; transition:background .2s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">
+          <i class="bi bi-file-earmark-person me-2"></i> Resume Builder
+        </a>
+        <a href="{% url 'analytics:home' %}" class="d-block px-3 py-2 rounded text-decoration-none text-muted" style="font-size:14px; transition:background .2s;" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='transparent'">
+          <i class="bi bi-bar-chart me-2"></i> My Analytics
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Form -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title">Edit Profile</h5>
+        <span class="badge bg-success">Auto-saved</span>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">Personal Information</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">First Name</label>
+              <input type="text" name="first_name" class="form-control" value="{{ request.user.first_name }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" name="last_name" class="form-control" value="{{ request.user.last_name }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" value="{{ request.user.email }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone</label>
+              <input type="text" name="phone" class="form-control" value="{{ request.user.phone }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Bio</label>
+              <textarea name="bio" class="form-control" rows="3" placeholder="Tell us about yourself...">{{ request.user.bio }}</textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Profile Picture</label>
+              <input type="file" name="profile_picture" class="form-control" accept="image/*">
+            </div>
+          </div>
+
+          {% if student_form %}
+          <h6 class="fw-bold text-primary mb-3 mt-4 border-bottom pb-2">Academic Information</h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Roll Number</label>
+              <input type="text" name="roll_number" class="form-control" value="{{ student_profile.roll_number }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Branch</label>
+              <select name="branch" class="form-select">
+                {% for code, name in student_form.fields.branch.choices %}
+                <option value="{{ code }}" {% if student_profile.branch == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Year</label>
+              <select name="year" class="form-select">
+                {% for val, label in student_form.fields.year.choices %}
+                <option value="{{ val }}" {% if student_profile.year == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Semester</label>
+              <input type="number" name="semester" class="form-control" value="{{ student_profile.semester }}" min="1" max="8">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">CGPA</label>
+              <input type="number" name="cgpa" class="form-control" value="{{ student_profile.cgpa }}" step="0.01" min="0" max="10">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Skills <small class="text-muted">(comma-separated)</small></label>
+              <input type="text" name="skills" class="form-control" value="{{ student_profile.skills }}" placeholder="Python, Django, React, SQL, DSA...">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-linkedin text-primary me-1"></i> LinkedIn URL</label>
+              <input type="url" name="linkedin_url" class="form-control" value="{{ student_profile.linkedin_url }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label"><i class="bi bi-github me-1"></i> GitHub URL</label>
+              <input type="url" name="github_url" class="form-control" value="{{ student_profile.github_url }}">
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check2 me-2"></i> Save Changes
+            </button>
+            <a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.js-profile-bar').forEach(function(el) {
+    var w = parseInt(el.getAttribute('data-width'), 10) || 0;
+    el.style.width = Math.min(w, 100) + '%';
+  });
+});
+</script>
+{% endblock %}
+

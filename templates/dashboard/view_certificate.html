@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Certificate — {{ certificate.certificate_id }}{% endblock %}
+{% block page_title %}Certificate Verification{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Portal <span>Certificate</span> &#127891;</h1>
+    <p class="dash-subtitle">Verified platform achievement certificate ID: {{ certificate.certificate_id }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'dashboard:certificates' %}" class="dash-btn-outline">&larr; Back to My Certificates</a>
+    <button onclick="window.print()" class="dash-btn-primary"><i class="bi bi-printer me-1"></i> Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="dash-card p-5 border-4 border-primary position-relative bg-white shadow-lg mx-auto" style="max-width:850px; border-style:solid; border-radius:16px;">
+  <!-- Certificate Watermark / Header -->
+  <div class="text-center mb-4">
+    <div class="text-primary fs-1 mb-2">&#127891;</div>
+    <h2 class="fw-bold text-dark text-uppercase tracking-wide mb-1" style="font-family:Georgia, serif; letter-spacing:2px;">Certificate of Achievement</h2>
+    <p class="text-muted small text-uppercase" style="letter-spacing:1.5px;">Issued by PlacementPro Student &amp; Career Assistant Platform</p>
+    <hr class="w-25 mx-auto border-2 border-primary my-3">
+  </div>
+
+  <div class="text-center py-3">
+    <p class="text-secondary fs-5 mb-2">This is to certify that</p>
+    <h1 class="display-5 fw-bold text-primary mb-3" style="font-family:Georgia, serif;">{{ certificate.student.get_full_name|default:certificate.student.username }}</h1>
+    <p class="text-secondary lh-lg max-w-xl mx-auto mb-4" style="font-size:16px;">
+      has successfully completed the requirements for <br>
+      <strong class="text-dark fs-4 d-block mt-2">{{ certificate.title }}</strong>
+      <span class="d-block text-muted small mt-1">{{ certificate.description }}</span>
+    </p>
+  </div>
+
+  <div class="row align-items-end mt-4 pt-4 border-top">
+    <div class="col-6">
+      <div class="small text-muted">
+        <div><strong>Certificate ID:</strong> {{ certificate.certificate_id }}</div>
+        <div><strong>Issue Date:</strong> {{ certificate.issued_date|date:"F d, Y" }}</div>
+        <div><strong>Status:</strong> <span class="badge bg-success">Verified &amp; Authentic</span></div>
+      </div>
+    </div>
+    <div class="col-6 text-end">
+      <div class="d-inline-block text-center">
+        <div class="fw-bold text-dark border-bottom pb-1 px-4 mb-1" style="font-family:Georgia, serif;">PlacementPro Academic Board</div>
+        <small class="text-muted d-block">Platform Academic Assessment Unit</small>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

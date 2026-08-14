@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}AI Service Health — Admin{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">AI Service Health Check 🤖</h1>
+    <p class="dash-subtitle">Real-time status monitoring for OpenRouter &amp; NVIDIA Nemotron AI Integration</p>
+  </div>
+  <div>
+    <a href="{% url 'dashboard:admin' %}" class="dash-btn-outline">&larr; Back to Admin Dashboard</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-5">
+    <div class="dash-card">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-cpu text-primary me-2"></i>OpenRouter Configuration Status</h5>
+      
+      <div class="d-flex justify-content-between py-2 border-bottom">
+        <span class="text-muted">AI Provider</span>
+        <strong class="text-dark">{{ health.provider }}</strong>
+      </div>
+      <div class="d-flex justify-content-between py-2 border-bottom">
+        <span class="text-muted">Active Model</span>
+        <span class="badge bg-indigo">{{ health.model }}</span>
+      </div>
+      <div class="d-flex justify-content-between py-2 border-bottom">
+        <span class="text-muted">Connection Status</span>
+        {% if health.api_connected %}
+          <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> Connected &amp; Operational</span>
+        {% else %}
+          <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i> {{ health.status }}</span>
+        {% endif %}
+      </div>
+      <div class="d-flex justify-content-between py-2">
+        <span class="text-muted">Last Checked</span>
+        <span class="text-secondary small">Just now</span>
+      </div>
+
+      <div class="mt-4">
+        <a href="?format=json" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
+          <i class="bi bi-code-square me-1"></i> View Raw JSON Status
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="dash-card">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-terminal me-2 text-indigo"></i>Live AI Response Test</h5>
+      
+      <div class="bg-light p-3 rounded mb-3">
+        <strong class="d-block small text-muted mb-1">TEST PROMPT:</strong>
+        <code class="text-dark">{{ health.test_prompt }}</code>
+      </div>
+
+      {% if health.api_connected %}
+      <div class="p-3 bg-success-subtle border border-success-subtle rounded text-success-emphasis">
+        <strong class="d-block mb-2"><i class="bi bi-check2-circle me-1"></i>REAL AI RESPONSE RECEIVED:</strong>
+        <p class="mb-0 small lh-lg text-dark" style="white-space:pre-wrap">{{ health.response }}</p>
+      </div>
+      {% else %}
+      <div class="p-3 bg-danger-subtle border border-danger-subtle rounded text-danger-emphasis">
+        <strong class="d-block mb-1"><i class="bi bi-exclamation-triangle me-1"></i>DIAGNOSTIC ERROR LOG:</strong>
+        <p class="mb-0 small font-monospace">{{ health.error }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

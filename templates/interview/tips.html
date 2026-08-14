@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Interview Tips & Strategies — PlacementPro{% endblock %}
+{% block page_title %}Interview Tips{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Interview <span>Tips &amp; Strategies</span> &#128161;</h1>
+    <p class="dash-subtitle">Expert advice to ace campus placements and off-campus interviews</p>
+  </div>
+  <div>
+    <a href="{% url 'interview:home' %}" class="dash-btn-outline">&larr; Back to Interview Hub</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for category in tips %}
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi {{ category.icon|default:'bi-check-circle' }} text-primary me-2"></i>{{ category.category }}</h5>
+      <ul class="list-group list-group-flush">
+        {% for tip in category.tips %}
+        <li class="list-group-item px-0 border-bottom text-secondary small py-2 d-flex align-items-start gap-2">
+          <i class="bi bi-arrow-right-short text-primary fs-5 mt-n1"></i>
+          <span>{{ tip }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

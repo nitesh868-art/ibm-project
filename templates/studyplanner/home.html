@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Study Planner{% endblock %}
+{% block page_title %}AI Study Planner{% endblock %}
+{% block breadcrumb %}Study / Study Planner{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h4 class="fw-800 mb-1">Smart Study Planner 📅</h4>
+    <p class="text-muted mb-0" style="font-size:14px;">Personalized weekly schedules, active goals, and focus timers</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'studyplanner:generate_ai_plan' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-robot me-1"></i> Generate AI Plan
+    </a>
+    <a href="{% url 'studyplanner:add_subject' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i> Add Subject
+    </a>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon primary"><i class="bi bi-book-fill"></i></div>
+      <div class="stat-info">
+        <div class="stat-value">{{ subjects.count }}</div>
+        <div class="stat-label">Active Subjects</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon success"><i class="bi bi-bullseye"></i></div>
+      <div class="stat-info">
+        <div class="stat-value">{{ active_goals.count }}</div>
+        <div class="stat-label">Active Goals</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon warning"><i class="bi bi-stopwatch-fill"></i></div>
+      <div class="stat-info">
+        <div class="stat-value">{{ streak }} days</div>
+        <div class="stat-label">Study Streak</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon info"><i class="bi bi-clock-history"></i></div>
+      <div class="stat-info">
+        <div class="stat-value">{{ today_mins }}m</div>
+        <div class="stat-label">Studied Today</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Side: Active Study Plan & Subjects -->
+  <div class="col-lg-8">
+    {% if active_plan %}
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title"><i class="bi bi-calendar-check me-2 text-primary"></i>Active Study Plan: {{ active_plan.title }}</h6>
+        <span class="badge bg-success">Active</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted" style="font-size:14px;">{{ active_plan.description }}</p>
+        <div class="d-flex gap-3 mb-3">
+          <small class="text-muted"><i class="bi bi-calendar me-1"></i>{{ active_plan.start_date }} to {{ active_plan.end_date }}</small>
+          <small class="text-muted"><i class="bi bi-clock me-1"></i>Target: {{ active_plan.daily_study_hours }} hours/day</small>
+        </div>
+        <div class="progress mb-2" style="height:10px;">
+          <div class="progress-bar js-plan-bar" data-width="{{ active_plan.completion_percentage }}"></div>
+        </div>
+        <small class="text-muted">{{ active_plan.completion_percentage }}% overall completion</small>
+      </div>
+    </div>
+    {% else %}
+    <div class="card mb-4 text-center py-4">
+      <div class="card-body">
+        <i class="bi bi-robot display-4 text-primary mb-3"></i>
+        <h5>No Active Study Plan</h5>
+        <p class="text-muted" style="font-size:14px;">Let PlacementPro AI generate a personalized study plan for your exams!</p>
+        <a href="{% url 'studyplanner:generate_ai_plan' %}" class="btn btn-primary btn-sm">
+          <i class="bi bi-magic me-1"></i> Create AI Study Plan Now
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Subjects Progress Grid -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title"><i class="bi bi-journal-bookmark me-2 text-primary"></i>My Subjects</h6>
+        <a href="{% url 'studyplanner:subjects' %}" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for subject in subjects %}
+          <div class="col-md-6">
+            <div class="p-3 rounded-3 border">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold js-subj-title" data-color="{{ subject.color }}" style="font-size:14px;">{{ subject.name }}</span>
+                <span class="badge bg-secondary">{{ subject.completion_percentage }}%</span>
+              </div>
+              <div class="progress mb-2" style="height:6px;">
+                <div class="progress-bar js-subj-bar" data-width="{{ subject.completion_percentage }}" data-color="{{ subject.color }}"></div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-2">
+                <small class="text-muted">{{ subject.topics.count }} topics</small>
+                <a href="{% url 'studyplanner:topics' subject.pk %}" class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size:12px;">Manage Topics →</a>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="text-center py-3 text-muted">No subjects added yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Goals & Pomodoro Quick Widget -->
+  <div class="col-lg-4">
+    <!-- Pomodoro Quick Card -->
+    <div class="card mb-4 text-center">
+      <div class="card-header"><h6 class="card-title"><i class="bi bi-stopwatch me-2 text-danger"></i>Focus Pomodoro Timer</h6></div>
+      <div class="card-body">
+        <div class="display-4 fw-bold text-primary mb-3" id="pomodoroDisplay">25:00</div>
+        <div class="d-flex justify-content-center gap-2">
+          <button class="btn btn-primary btn-sm" id="startBtn" onclick="toggleTimer()">Start</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="resetTimer()">Reset</button>
+          <a href="{% url 'studyplanner:pomodoro' %}" class="btn btn-outline-info btn-sm" title="Full Timer"><i class="bi bi-arrows-fullscreen"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Goals Card -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title"><i class="bi bi-check2-square me-2 text-success"></i>Active Goals</h6>
+        <a href="{% url 'studyplanner:add_goal' %}" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-lg"></i></a>
+      </div>
+      <div class="card-body">
+        {% for goal in active_goals %}
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+          <div>
+            <div class="fw-600" style="font-size:13px;">{{ goal.title }}</div>
+            <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>Due: {{ goal.target_date }}</small>
+          </div>
+          <a href="{% url 'studyplanner:complete_goal' goal.pk %}" class="btn btn-sm btn-outline-success p-1" title="Mark Done">
+            <i class="bi bi-check-lg"></i>
+          </a>
+        </div>
+        {% empty %}
+        <div class="text-center text-muted py-3" style="font-size:13px;">No active goals. Add one!</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let timerSeconds = 25 * 60;
+let timerInterval = null;
+
+function updateDisplay() {
+  const mins = Math.floor(timerSeconds / 60);
+  const secs = timerSeconds % 60;
+  document.getElementById('pomodoroDisplay').textContent =
+    `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function toggleTimer() {
+  const btn = document.getElementById('startBtn');
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    btn.textContent = 'Start';
+  } else {
+    btn.textContent = 'Pause';
+    timerInterval = setInterval(() => {
+      if (timerSeconds > 0) {
+        timerSeconds--;
+        updateDisplay();
+      } else {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btn.textContent = 'Start';
+        alert('⏰ Pomodoro session complete!');
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  timerSeconds = 25 * 60;
+  document.getElementById('startBtn').textContent = 'Start';
+  updateDisplay();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.js-plan-bar').forEach(function(el) {
+    var w = parseInt(el.getAttribute('data-width'), 10) || 0;
+    el.style.width = Math.min(w, 100) + '%';
+  });
+  document.querySelectorAll('.js-subj-title').forEach(function(el) {
+    var c = el.getAttribute('data-color');
+    if (c) el.style.color = c;
+  });
+  document.querySelectorAll('.js-subj-bar').forEach(function(el) {
+    var w = parseInt(el.getAttribute('data-width'), 10) || 0;
+    var c = el.getAttribute('data-color');
+    el.style.width = Math.min(w, 100) + '%';
+    if (c) el.style.backgroundColor = c;
+  });
+});
+</script>
+{% endblock %}
+

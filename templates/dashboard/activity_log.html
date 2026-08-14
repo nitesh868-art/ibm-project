@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Activity Audit Log — Admin{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4">
+  <div>
+    <h1 class="dash-title">System Activity & Audit Log</h1>
+    <p class="dash-subtitle">Real-time activity tracking and security audit</p>
+  </div>
+  <div>
+    <a href="{% url 'dashboard:admin' %}" class="dash-btn-outline">&larr; Back to Admin Dashboard</a>
+  </div>
+</div>
+
+<div class="dash-card mb-4">
+  <form method="get" class="row g-3 align-items-center">
+    <div class="col-md-4">
+      <input type="text" name="q" class="form-control" placeholder="Search action..." value="{{ search_query }}">
+    </div>
+    <div class="col-md-3">
+      <select name="module" class="form-select">
+        <option value="">All Modules</option>
+        <option value="Accounts" {% if selected_module == 'Accounts' %}selected{% endif %}>Accounts</option>
+        <option value="Chatbot" {% if selected_module == 'Chatbot' %}selected{% endif %}>Chatbot / AI</option>
+        <option value="StudyPlanner" {% if selected_module == 'StudyPlanner' %}selected{% endif %}>Study Planner</option>
+        <option value="Quiz" {% if selected_module == 'Quiz' %}selected{% endif %}>Quiz & Mock Tests</option>
+        <option value="Placement" {% if selected_module == 'Placement' %}selected{% endif %}>Placement</option>
+        <option value="Resume" {% if selected_module == 'Resume' %}selected{% endif %}>Resume Builder</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="role" class="form-select">
+        <option value="">All Roles</option>
+        <option value="student" {% if selected_role == 'student' %}selected{% endif %}>Student</option>
+        <option value="faculty" {% if selected_role == 'faculty' %}selected{% endif %}>Faculty</option>
+        <option value="admin" {% if selected_role == 'admin' %}selected{% endif %}>Admin</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="dash-btn-primary w-100">Filter</button>
+    </div>
+  </form>
+</div>
+
+<div class="dash-card">
+  <div class="table-wrap">
+    <table class="dash-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>User</th>
+          <th>Role</th>
+          <th>Action</th>
+          <th>Module</th>
+          <th>Status</th>
+          <th>IP Address</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in page_obj %}
+        <tr>
+          <td style="font-size:12px;color:#64748b">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+          <td><strong>{{ log.user.username|default:"Anonymous" }}</strong></td>
+          <td><span class="grade-badge {% if log.role == 'admin' %}grade-a{% elif log.role == 'faculty' %}grade-b{% else %}grade-c{% endif %}">{{ log.role }}</span></td>
+          <td>{{ log.action }}</td>
+          <td><span class="badge bg-light text-dark">{{ log.module }}</span></td>
+          <td>
+            <span class="badge {% if log.status == 'success' %}bg-success{% elif log.status == 'warning' %}bg-warning{% else %}bg-danger{% endif %}">
+              {{ log.status }}
+            </span>
+          </td>
+          <td style="font-size:11px;color:#94a3b8">{{ log.ip_address|default:"127.0.0.1" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">No activity logs found matching the filter criteria.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <span class="text-muted style-12">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <div>
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-sm btn-outline-secondary">&larr; Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}" class="btn btn-sm btn-outline-secondary">Next &rarr;</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

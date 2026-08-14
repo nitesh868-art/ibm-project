@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Taking Test: {{ test.title }}{% endblock %}
+{% block page_title %}Mock Test Assessment{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2 sticky-top bg-white p-3 border-bottom shadow-sm z-3">
+  <div>
+    <h1 class="dash-title mb-0" style="font-size: 20px;">{{ test.title }}</h1>
+    <span class="text-secondary small">{{ questions|length }} Questions | Total Marks: {{ test.total_marks }}</span>
+  </div>
+  <div class="d-flex align-items-center gap-3">
+    <div class="bg-danger text-white px-3 py-2 rounded fw-bold font-monospace fs-5" id="timer-box">
+      <i class="bi bi-clock-history me-1"></i> <span id="time-left">00:00</span>
+    </div>
+    <button type="button" class="dash-btn-primary" onclick="submitForm()"><i class="bi bi-check-circle me-1"></i> Submit Test</button>
+  </div>
+</div>
+
+<form id="quiz-form" method="POST" action="{% url 'quiz:submit_test' pk=test.pk %}">
+  {% csrf_token %}
+  <div class="row g-4">
+    <div class="col-lg-9">
+      {% for q in questions %}
+      <div class="dash-card mb-4" id="q-box-{{ forloop.counter }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="badge bg-primary fs-6">Question {{ forloop.counter }} of {{ questions|length }}</span>
+          <span class="text-muted small">Marks: {{ q.marks|default:1 }}</span>
+        </div>
+        <h5 class="fw-bold text-dark mb-3">{{ q.text }}</h5>
+
+        {% if q.code_snippet %}
+        <pre class="bg-dark text-light p-3 rounded mb-3"><code>{{ q.code_snippet }}</code></pre>
+        {% endif %}
+
+        <div class="vstack gap-2">
+          <div class="form-check p-3 border rounded bg-light">
+            <input class="form-check-input" type="radio" name="q_{{ q.pk }}" value="a" id="q_{{ q.pk }}_a">
+            <label class="form-check-label w-100" for="q_{{ q.pk }}_a"><strong>A.</strong> {{ q.option_a }}</label>
+          </div>
+          <div class="form-check p-3 border rounded bg-light">
+            <input class="form-check-input" type="radio" name="q_{{ q.pk }}" value="b" id="q_{{ q.pk }}_b">
+            <label class="form-check-label w-100" for="q_{{ q.pk }}_b"><strong>B.</strong> {{ q.option_b }}</label>
+          </div>
+          <div class="form-check p-3 border rounded bg-light">
+            <input class="form-check-input" type="radio" name="q_{{ q.pk }}" value="c" id="q_{{ q.pk }}_c">
+            <label class="form-check-label w-100" for="q_{{ q.pk }}_c"><strong>C.</strong> {{ q.option_c }}</label>
+          </div>
+          <div class="form-check p-3 border rounded bg-light">
+            <input class="form-check-input" type="radio" name="q_{{ q.pk }}" value="d" id="q_{{ q.pk }}_d">
+            <label class="form-check-label w-100" for="q_{{ q.pk }}_d"><strong>D.</strong> {{ q.option_d }}</label>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Question Palette -->
+    <div class="col-lg-3">
+      <div class="dash-card sticky-top">
+        <h6 class="fw-bold text-dark mb-3">Question Palette</h6>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% for q in questions %}
+          <a href="#q-box-{{ forloop.counter }}" class="btn btn-outline-secondary btn-sm">{{ forloop.counter }}</a>
+          {% endfor %}
+        </div>
+        <button type="button" class="dash-btn-primary w-100 mt-2" onclick="submitForm()">Submit Assessment</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+{{ duration_seconds|default:1800|json_script:"duration-seconds-data" }}
+
+<script>
+let durationElem = document.getElementById('duration-seconds-data');
+let remainingSeconds = durationElem ? parseInt(JSON.parse(durationElem.textContent || '1800'), 10) : 1800;
+
+function updateTimer() {
+  const mins = Math.floor(remainingSeconds / 60);
+  const secs = remainingSeconds % 60;
+  const timerLabel = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+  const el = document.getElementById('time-left');
+  if (el) el.innerText = timerLabel;
+
+  if (remainingSeconds <= 0) {
+    alert('⏰ Time is up! Submitting your test automatically.');
+    const form = document.getElementById('quiz-form');
+    if (form) form.submit();
+  } else {
+    remainingSeconds--;
+  }
+}
+
+function submitForm() {
+  if (confirm('Are you sure you want to submit the test?')) {
+    const form = document.getElementById('quiz-form');
+    if (form) form.submit();
+  }
+}
+
+setInterval(updateTimer, 1000);
+updateTimer();
+</script>
+{% endblock %}

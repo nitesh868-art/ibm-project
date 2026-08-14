@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}AI Resume Suggestions — {{ resume.title }} — PlacementPro{% endblock %}
+{% block page_title %}AI Resume Suggestions{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'resume_builder:home' %}">Resume</a> /
+  <a href="{% url 'resume_builder:edit' pk=resume.pk %}">{{ resume.title }}</a> /
+  <span>AI Suggestions</span>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.ats-ring-wrap {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(var(--ring-color, #6366f1) var(--ring-pct, 0%), var(--border) 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+.ats-ring-high { --ring-color: #10b981; }
+.ats-ring-mid  { --ring-color: #f59e0b; }
+.ats-ring-low  { --ring-color: #ef4444; }
+
+.ats-ring-inner {
+  width: 96px;
+  height: 96px;
+  background: var(--surface);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.ats-score-num {
+  font-size: 1.8rem;
+  color: var(--ring-color, #6366f1);
+}
+.ats-score-denom {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">AI Resume <span>Suggestions</span> 🤖</h1>
+    <p class="dash-subtitle">AI-powered feedback to make your resume stand out</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'resume_builder:ats_score' pk=resume.pk %}" class="dash-btn-outline">
+      <i class="bi bi-graph-up me-1"></i> Run ATS Score
+    </a>
+    <a href="{% url 'resume_builder:edit' pk=resume.pk %}" class="dash-btn-primary">
+      <i class="bi bi-pencil me-1"></i> Edit Resume
+    </a>
+  </div>
+</div>
+
+{% if feedback %}
+<!-- ATS Score Banner -->
+{% if feedback.ats_score is not None %}
+<div class="dash-card mb-4 text-center py-4">
+  <div class="row align-items-center justify-content-center">
+    <div class="col-md-3">
+      <div class="ats-ring-wrap ats-ring-{% if feedback.ats_score >= 70 %}high{% elif feedback.ats_score >= 50 %}mid{% else %}low{% endif %}"
+           data-score="{{ feedback.ats_score|default:0 }}">
+        <div class="ats-ring-inner">
+          <span class="fw-bold ats-score-num">{{ feedback.ats_score }}</span>
+          <span class="ats-score-denom">/100</span>
+        </div>
+      </div>
+      <strong>ATS Score</strong>
+    </div>
+    <div class="col-md-6 text-start">
+      <h5 class="fw-bold mb-2">
+        {% if feedback.ats_score >= 70 %}
+        ✅ Strong Resume — {{ feedback.ats_score }}/100
+        {% elif feedback.ats_score >= 50 %}
+        ⚠️ Moderate Resume — {{ feedback.ats_score }}/100
+        {% else %}
+        ❌ Needs Work — {{ feedback.ats_score }}/100
+        {% endif %}
+      </h5>
+      {% if feedback.overall_feedback %}
+      <p class="text-muted mb-0">{{ feedback.overall_feedback }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <!-- Strengths -->
+  {% if feedback.strengths %}
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold mb-3 text-success"><i class="bi bi-check-circle-fill me-2"></i>Strengths</h5>
+      <ul class="list-unstyled mb-0">
+        {% for item in feedback.strengths %}
+        <li class="d-flex align-items-start gap-2 mb-2">
+          <i class="bi bi-check-lg text-success mt-1" style="min-width:16px;"></i>
+          <span class="small">{{ item }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Weaknesses -->
+  {% if feedback.weaknesses %}
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold mb-3 text-danger"><i class="bi bi-exclamation-circle-fill me-2"></i>Areas to Improve</h5>
+      <ul class="list-unstyled mb-0">
+        {% for item in feedback.weaknesses %}
+        <li class="d-flex align-items-start gap-2 mb-2">
+          <i class="bi bi-x-lg text-danger mt-1" style="min-width:16px;"></i>
+          <span class="small">{{ item }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Keywords Missing -->
+  {% if feedback.missing_keywords %}
+  <div class="col-12">
+    <div class="dash-card">
+      <h5 class="fw-bold mb-3"><i class="bi bi-tags-fill text-warning me-2"></i>Missing Keywords / Skills</h5>
+      <div class="d-flex flex-wrap gap-2">
+        {% for kw in feedback.missing_keywords %}
+        <span class="badge bg-warning text-dark">{{ kw }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Suggestions -->
+  {% if feedback.suggestions %}
+  <div class="col-12">
+    <div class="dash-card">
+      <h5 class="fw-bold mb-3"><i class="bi bi-lightbulb-fill text-primary me-2"></i>Actionable Suggestions</h5>
+      <div class="vstack gap-2">
+        {% for suggestion in feedback.suggestions %}
+        <div class="d-flex align-items-start gap-3 p-3 rounded" style="background:rgba(99,102,241,.06);border-left:3px solid #6366f1;">
+          <span class="badge bg-primary rounded-pill">{{ forloop.counter }}</span>
+          <span class="small">{{ suggestion }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Job Match Score if available -->
+  {% if feedback.job_match_percentage %}
+  <div class="col-12">
+    <div class="dash-card">
+      <h5 class="fw-bold mb-2"><i class="bi bi-briefcase-fill text-indigo me-2"></i>Job Description Match</h5>
+      <div class="progress mb-2" style="height:12px;">
+        <div class="progress-bar bg-primary auto-width" data-width="{{ feedback.job_match_percentage|default:0 }}"></div>
+      </div>
+      <p class="text-muted small mb-0">
+        Your resume matches <strong>{{ feedback.job_match_percentage }}%</strong> of the job description keywords.
+        {% if feedback.job_match_percentage < 60 %}
+        Consider adding more relevant skills and project descriptions aligned to the job.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% else %}
+<!-- No feedback yet — run ATS Score -->
+<div class="dash-card text-center py-5">
+  <i class="bi bi-robot display-4 text-muted mb-3"></i>
+  <h4 class="fw-bold">No AI Feedback Yet</h4>
+  <p class="text-muted mb-4">
+    Run the ATS Score analysis first. AI will evaluate your resume against common hiring criteria,
+    identify strengths and gaps, and give you actionable improvement suggestions.
+  </p>
+  <a href="{% url 'resume_builder:ats_score' pk=resume.pk %}" class="dash-btn-primary">
+    <i class="bi bi-graph-up me-2"></i>Run ATS Analysis Now
+  </a>
+</div>
+{% endif %}
+
+<!-- Actions -->
+<div class="dash-card mt-4">
+  <h6 class="fw-bold mb-3">Quick Actions</h6>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'resume_builder:ats_score' pk=resume.pk %}" class="btn btn-outline-primary">
+      <i class="bi bi-arrow-repeat me-1"></i> Re-run Analysis
+    </a>
+    <a href="{% url 'resume_builder:edit' pk=resume.pk %}" class="btn btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i> Edit Resume
+    </a>
+    <a href="{% url 'resume_builder:preview' pk=resume.pk %}" class="btn btn-outline-success">
+      <i class="bi bi-eye me-1"></i> Preview
+    </a>
+    <a href="{% url 'resume_builder:download' pk=resume.pk %}" class="btn btn-outline-dark">
+      <i class="bi bi-download me-1"></i> Download PDF
+    </a>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('[data-score]').forEach(function(el) {
+    var score = parseInt(el.getAttribute('data-score') || '0', 10);
+    el.style.setProperty('--ring-pct', score + '%');
+  });
+  document.querySelectorAll('.auto-width[data-width]').forEach(function(el) {
+    var pct = parseFloat(el.getAttribute('data-width') || '0');
+    el.style.width = pct + '%';
+  });
+});
+</script>
+{% endblock %}

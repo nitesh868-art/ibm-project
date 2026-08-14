@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ resume.full_name }} — Classic Resume{% endblock %}
+{% block page_title %}Resume Preview — Classic{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Resume Preview: <span>{{ resume.full_name }}</span> 📄</h1>
+    <p class="dash-subtitle">Template: <strong>Classic</strong></p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'resume_builder:edit' pk=resume.pk %}" class="dash-btn-outline">← Edit Resume</a>
+    <a href="{% url 'resume_builder:download' pk=resume.pk %}" class="dash-btn-primary">
+      <i class="bi bi-download me-1"></i> Download PDF
+    </a>
+  </div>
+</div>
+
+<!-- Classic Resume — formal, single-column, clean serif-inspired layout -->
+<div class="bg-white p-5 rounded shadow-sm mx-auto border" style="max-width:800px;font-family:'Georgia',serif;">
+  <!-- Header — left-aligned, classic style -->
+  <div class="border-bottom pb-3 mb-4">
+    <h1 class="fw-bold mb-1" style="font-size:1.8rem;color:#1a1a2e;letter-spacing:.5px;">{{ resume.full_name }}</h1>
+    <p class="mb-1" style="font-size:.85rem;color:#444;">
+      {% if resume.email %}<span>{{ resume.email }}</span>{% endif %}
+      {% if resume.phone %} &nbsp;|&nbsp; <span>{{ resume.phone }}</span>{% endif %}
+      {% if resume.location %} &nbsp;|&nbsp; <span>{{ resume.location }}</span>{% endif %}
+    </p>
+    <p class="mb-0" style="font-size:.82rem;color:#666;">
+      {% if resume.linkedin %}<a href="{{ resume.linkedin }}" target="_blank" style="color:#444;">LinkedIn</a>{% endif %}
+      {% if resume.github %} &nbsp;|&nbsp; <a href="{{ resume.github }}" target="_blank" style="color:#444;">GitHub</a>{% endif %}
+      {% if resume.portfolio %} &nbsp;|&nbsp; <a href="{{ resume.portfolio }}" target="_blank" style="color:#444;">Portfolio</a>{% endif %}
+    </p>
+  </div>
+
+  <!-- Objective/Summary -->
+  {% if resume.summary %}
+  <div class="mb-4">
+    <h2 class="text-uppercase fw-bold mb-2" style="font-size:.9rem;letter-spacing:2px;color:#1a1a2e;border-bottom:1px solid #333;">OBJECTIVE</h2>
+    <p class="small" style="line-height:1.7;color:#333;">{{ resume.summary }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Education -->
+  {% if educations %}
+  <div class="mb-4">
+    <h2 class="text-uppercase fw-bold mb-2" style="font-size:.9rem;letter-spacing:2px;color:#1a1a2e;border-bottom:1px solid #333;">EDUCATION</h2>
+    {% for edu in educations %}
+    <div class="mb-2">
+      <div class="d-flex justify-content-between">
+        <strong style="font-size:.9rem;color:#1a1a2e;">{{ edu.degree }}{% if edu.field_of_study %}, {{ edu.field_of_study }}{% endif %}</strong>
+        <span class="text-muted" style="font-size:.82rem;">{{ edu.start_year }} – {{ edu.end_year|default:"Present" }}</span>
+      </div>
+      <div style="font-size:.85rem;color:#555;">{{ edu.institution }}{% if edu.grade %} | {{ edu.grade }}{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Skills -->
+  {% if skills %}
+  <div class="mb-4">
+    <h2 class="text-uppercase fw-bold mb-2" style="font-size:.9rem;letter-spacing:2px;color:#1a1a2e;border-bottom:1px solid #333;">SKILLS</h2>
+    <div style="font-size:.88rem;color:#333;line-height:1.8;">
+      {% for skill in skills %}{{ skill.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Experience -->
+  {% if experiences %}
+  <div class="mb-4">
+    <h2 class="text-uppercase fw-bold mb-2" style="font-size:.9rem;letter-spacing:2px;color:#1a1a2e;border-bottom:1px solid #333;">EXPERIENCE</h2>
+    {% for exp in experiences %}
+    <div class="mb-3">
+      <div class="d-flex justify-content-between">
+        <strong style="font-size:.9rem;color:#1a1a2e;">{{ exp.job_title }} — {{ exp.company }}</strong>
+        <span class="text-muted" style="font-size:.82rem;">{{ exp.start_date|date:"M Y" }} – {% if exp.is_current %}Present{% else %}{{ exp.end_date|date:"M Y" }}{% endif %}</span>
+      </div>
+      {% if exp.location %}<div class="text-muted" style="font-size:.82rem;">{{ exp.location }}</div>{% endif %}
+      {% if exp.description %}<p class="small mt-1 mb-0" style="line-height:1.6;color:#444;">{{ exp.description }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Projects -->
+  {% if projects %}
+  <div class="mb-4">
+    <h2 class="text-uppercase fw-bold mb-2" style="font-size:.9rem;letter-spacing:2px;color:#1a1a2e;border-bottom:1px solid #333;">PROJECTS</h2>
+    {% for proj in projects %}
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-start">
+        <strong style="font-size:.9rem;color:#1a1a2e;">{{ proj.title }}</strong>
+        {% if proj.github_link %}<a href="{{ proj.github_link }}" target="_blank" style="font-size:.8rem;color:#1a1a2e;">GitHub</a>{% endif %}
+      </div>
+      {% if proj.technologies %}<div class="text-muted" style="font-size:.82rem;">{{ proj.technologies }}</div>{% endif %}
+      <p class="small mt-1 mb-0" style="line-height:1.6;color:#444;">{{ proj.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Certifications -->
+  {% if certifications %}
+  <div class="mb-4">
+    <h2 class="text-uppercase fw-bold mb-2" style="font-size:.9rem;letter-spacing:2px;color:#1a1a2e;border-bottom:1px solid #333;">CERTIFICATIONS</h2>
+    {% for cert in certifications %}
+    <div class="mb-1 d-flex justify-content-between" style="font-size:.88rem;">
+      <span>{{ cert.name }} — <em>{{ cert.issuing_org }}</em></span>
+      {% if cert.issue_date %}<span class="text-muted">{{ cert.issue_date|date:"M Y" }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

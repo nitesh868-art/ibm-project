@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}HR Interview Questions — PlacementPro{% endblock %}
+{% block page_title %}HR Interview Practice{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'interview:home' %}">Interview Prep</a> / <span>HR Questions</span>
+{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">HR Interview <span>Practice</span> 🎤</h1>
+    <p class="dash-subtitle">Master the most common HR questions. Read model answers, practice with AI, and get scored feedback.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'interview:ai_practice' %}" class="dash-btn-primary">
+      <i class="bi bi-robot me-1"></i> AI Practice Mode
+    </a>
+    <a href="{% url 'interview:home' %}" class="dash-btn-outline">← Back</a>
+  </div>
+</div>
+
+<!-- Category Tabs -->
+<div class="dash-card mb-4 p-0 overflow-hidden">
+  <ul class="nav nav-tabs border-0 px-3 pt-3" id="hrTabs">
+    {% for cat in categories %}
+    <li class="nav-item">
+      <button class="nav-link {% if forloop.first %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#tab-{{ cat.id }}">
+        {{ cat.name }}
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <div class="tab-content p-4">
+    {% for cat in categories %}
+    <div class="tab-pane fade {% if forloop.first %}show active{% endif %}" id="tab-{{ cat.id }}">
+      {% if cat.id == 'behavior' %}
+      <div class="alert alert-info mb-4">
+        <strong>💡 STAR Method:</strong> Answer behavioral questions with:
+        <strong>S</strong>ituation → <strong>T</strong>ask → <strong>A</strong>ction → <strong>R</strong>esult
+      </div>
+      {% endif %}
+
+      {% for q in cat.questions %}
+      <div class="mb-4 p-4 rounded" style="background:var(--surface);border:1px solid var(--border);border-left:4px solid #6366f1;">
+        <div class="d-flex justify-content-between align-items-start mb-2 flex-wrap gap-2">
+          <h6 class="fw-bold mb-0" style="color:var(--text-primary)">❓ {{ q.question }}</h6>
+          <button class="btn btn-sm btn-outline-primary hr-practice-btn" data-question="{{ q.question }}">
+            <i class="bi bi-pencil me-1"></i> Practice with AI
+          </button>
+        </div>
+
+        {% if q.tips %}
+        <p class="small text-muted mb-2"><i class="bi bi-lightbulb text-warning me-1"></i>{{ q.tips }}</p>
+        {% endif %}
+
+        {% if q.star %}
+        <span class="badge bg-info text-dark mb-2">Use STAR Method</span>
+        {% endif %}
+
+        <details class="mt-2">
+          <summary class="btn btn-sm btn-outline-success fw-semibold">
+            <i class="bi bi-eye me-1"></i> View Model Answer
+          </summary>
+          <div class="mt-3 p-3 rounded" style="background:rgba(16,185,129,.07);border-left:3px solid #10b981;">
+            <p class="small mb-0" style="line-height:1.7;white-space:pre-line;">{{ q.model_answer }}</p>
+          </div>
+        </details>
+
+        {% if q.mistakes %}
+        <details class="mt-2">
+          <summary class="btn btn-sm btn-outline-danger fw-semibold">
+            <i class="bi bi-x-circle me-1"></i> Common Mistakes
+          </summary>
+          <div class="mt-2 p-3 rounded" style="background:rgba(239,68,68,.07);border-left:3px solid #ef4444;">
+            <p class="small mb-0" style="line-height:1.7;white-space:pre-line;">{{ q.mistakes }}</p>
+          </div>
+        </details>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- AI Practice Section -->
+<div class="dash-card mb-4" id="ai-practice-section">
+  <h5 class="fw-bold mb-3"><i class="bi bi-robot text-primary me-2"></i>AI Answer Evaluator</h5>
+  <p class="text-muted small mb-3">
+    Type any HR question and your answer. The AI will evaluate your response and give you a score,
+    strengths, areas to improve, and a model answer.
+  </p>
+  <div class="row g-3">
+    <div class="col-12">
+      <label class="form-label small fw-bold">HR Question</label>
+      <input type="text" id="ai-question-input" class="form-control"
+             placeholder="e.g. Tell me about yourself" />
+    </div>
+    <div class="col-12">
+      <label class="form-label small fw-bold">Your Answer</label>
+      <textarea id="ai-answer-input" class="form-control" rows="4"
+                placeholder="Type your practice answer here..."></textarea>
+    </div>
+    <div class="col-12">
+      <button class="dash-btn-primary" id="ai-eval-btn" onclick="evaluateHRAnswer()">
+        <i class="bi bi-robot me-1"></i> Get AI Feedback
+      </button>
+    </div>
+  </div>
+  <div id="ai-eval-result" class="mt-3" style="display:none;"></div>
+</div>
+
+<!-- Quick Tips Card -->
+<div class="dash-card">
+  <h5 class="fw-bold mb-3"><i class="bi bi-lightbulb text-warning me-2"></i>Golden Rules for HR Interviews</h5>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="p-3 rounded" style="background:rgba(99,102,241,.07);border-left:4px solid #6366f1;">
+        <strong class="d-block mb-2">📋 Preparation</strong>
+        <ul class="text-muted small mb-0 ps-3">
+          <li>Research the company thoroughly</li>
+          <li>Review your resume — know every line</li>
+          <li>Prepare 2-3 stories using STAR method</li>
+          <li>Prepare 5 questions to ask the interviewer</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded" style="background:rgba(16,185,129,.07);border-left:4px solid #10b981;">
+        <strong class="d-block mb-2">🎯 During Interview</strong>
+        <ul class="text-muted small mb-0 ps-3">
+          <li>Be specific — avoid vague answers</li>
+          <li>Use numbers when possible ("reduced by 30%")</li>
+          <li>Listen carefully — don't interrupt</li>
+          <li>It's OK to pause and think</li>
+        </ul>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 rounded" style="background:rgba(245,158,11,.07);border-left:4px solid #f59e0b;">
+        <strong class="d-block mb-2">⚠️ Common Mistakes</strong>
+        <ul class="text-muted small mb-0 ps-3">
+          <li>Badmouthing previous employers</li>
+          <li>Being dishonest about skills</li>
+          <li>Not asking any questions at the end</li>
+          <li>Memorised, robotic-sounding answers</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function evaluateHRAnswer() {
+  const question = document.getElementById('ai-question-input').value.trim();
+  const answer = document.getElementById('ai-answer-input').value.trim();
+  const btn = document.getElementById('ai-eval-btn');
+  const result = document.getElementById('ai-eval-result');
+
+  if (!question || !answer) {
+    alert('Please enter both a question and your answer.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> AI Evaluating...';
+  result.style.display = 'block';
+  result.innerHTML = '<div class="text-muted small"><span class="spinner-border spinner-border-sm me-2"></span>AI interviewer is evaluating your response...</div>';
+
+  const fd = new FormData();
+  fd.append('question', question);
+  fd.append('answer', answer);
+  fd.append('role', 'Software Engineer');
+
+  try {
+    const res = await fetch('{% url "interview:evaluate_answer" %}', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      body: fd
+    });
+    const data = await res.json();
+
+    if (data.score !== undefined || data.overall_feedback) {
+      const scoreColor = (data.score || 0) >= 7 ? '#10b981' : (data.score || 0) >= 5 ? '#f59e0b' : '#ef4444';
+      const scoreMax = data.max_score || 10;
+      result.innerHTML = `
+        <div class="p-4 rounded border" style="border-color:${scoreColor}!important;border-left:4px solid ${scoreColor}!important;">
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <span class="badge fs-5 px-3 py-2" style="background:${scoreColor}">
+              Score: ${data.score || 'N/A'} / ${scoreMax}
+            </span>
+            ${data.technical_accuracy !== undefined ? `<small class="text-muted">Accuracy: ${data.technical_accuracy}/10 | Clarity: ${data.clarity || 7}/10</small>` : ''}
+          </div>
+          ${data.overall_feedback ? `<p class="mb-2"><strong>📋 Feedback:</strong> ${data.overall_feedback}</p>` : ''}
+          ${data.strengths && data.strengths.length ? `
+            <div class="mb-2">
+              <strong class="text-success">✅ Strengths:</strong>
+              <ul class="mb-0 mt-1 small">${(data.strengths || []).map(s => `<li>${s}</li>`).join('')}</ul>
+            </div>` : ''}
+          ${data.what_to_improve && data.what_to_improve.length ? `
+            <div class="mb-2">
+              <strong class="text-danger">⬆️ Improve:</strong>
+              <ul class="mb-0 mt-1 small">${(data.what_to_improve || []).map(s => `<li>${s}</li>`).join('')}</ul>
+            </div>` : ''}
+          ${data.better_answer ? `
+            <div class="mt-3 p-3 rounded" style="background:rgba(99,102,241,.07);border-left:3px solid #6366f1;">
+              <strong>💡 Better Answer Approach:</strong>
+              <p class="small mb-0 mt-1">${data.better_answer}</p>
+            </div>` : ''}
+        </div>`;
+    } else if (data.response) {
+      result.innerHTML = `<div class="p-3 rounded border"><p>${data.response}</p></div>`;
+    } else {
+      result.innerHTML = '<div class="alert alert-warning">AI service is temporarily unavailable. Please try again.</div>';
+    }
+  } catch (err) {
+    result.innerHTML = '<div class="alert alert-danger">Could not connect to AI service. Please try again.</div>';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-robot me-1"></i> Get AI Feedback';
+  }
+}
+
+// Pre-fill question when clicking on cards
+document.querySelectorAll('.hr-practice-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const q = this.dataset.question;
+    document.getElementById('ai-question-input').value = q;
+    document.getElementById('ai-practice-section').scrollIntoView({behavior: 'smooth'});
+    document.getElementById('ai-answer-input').focus();
+  });
+});
+</script>
+{% endblock %}

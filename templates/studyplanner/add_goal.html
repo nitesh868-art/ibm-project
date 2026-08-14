@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Add Goal — Study Planner{% endblock %}
+{% block page_title %}Add Goal{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Add New <span>Goal</span> &#127919;</h1>
+    <p class="dash-subtitle">Set clear, actionable milestones for your academic and career preparation</p>
+  </div>
+  <div>
+    <a href="{% url 'studyplanner:goals' %}" class="dash-btn-outline">&larr; Back to Goals</a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="dash-card">
+      <form method="POST" action="{% url 'studyplanner:add_goal' %}">
+        {% csrf_token %}
+        <div class="row g-3 mb-4">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Goal Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. Solve 50 Array & String problems" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Goal Type</label>
+            <select name="goal_type" class="form-select">
+              {% for val, label in goal_types %}
+              <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Target Completion Date</label>
+            <input type="date" name="target_date" class="form-control">
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Additional details or strategy..."></textarea>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{% url 'studyplanner:goals' %}" class="dash-btn-outline">Cancel</a>
+          <button type="submit" class="dash-btn-primary"><i class="bi bi-plus-circle me-1"></i> Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ resume.full_name }} — Resume Preview{% endblock %}
+{% block page_title %}Resume Preview{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Resume Preview: <span>{{ resume.full_name }}</span> &#128065;</h1>
+    <p class="dash-subtitle">Template: {{ resume.get_template_display }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'resume_builder:edit' pk=resume.pk %}" class="dash-btn-outline">&larr; Edit Resume</a>
+    <a href="{% url 'resume_builder:download' pk=resume.pk %}" class="dash-btn-primary"><i class="bi bi-download me-1"></i> Download PDF</a>
+  </div>
+</div>
+
+<!-- Resume Paper Container -->
+<div class="bg-white p-5 rounded shadow-sm max-w-4xl mx-auto border style-22">
+  <!-- Header -->
+  <div class="text-center pb-4 border-bottom mb-4">
+    <h1 class="fw-bold text-dark mb-1">{{ resume.full_name }}</h1>
+    <p class="text-secondary small mb-2">
+      {% if resume.email %}<i class="bi bi-envelope me-1"></i>{{ resume.email }}{% endif %}
+      {% if resume.phone %} | <i class="bi bi-telephone me-1"></i>{{ resume.phone }}{% endif %}
+      {% if resume.location %} | <i class="bi bi-geo-alt me-1"></i>{{ resume.location }}{% endif %}
+    </p>
+    <div class="d-flex justify-content-center gap-3 small">
+      {% if resume.linkedin %}<a href="{{ resume.linkedin }}" target="_blank" class="text-primary text-decoration-none"><i class="bi bi-linkedin me-1"></i>LinkedIn</a>{% endif %}
+      {% if resume.github %}<a href="{{ resume.github }}" target="_blank" class="text-dark text-decoration-none"><i class="bi bi-github me-1"></i>GitHub</a>{% endif %}
+      {% if resume.portfolio %}<a href="{{ resume.portfolio }}" target="_blank" class="text-indigo text-decoration-none"><i class="bi bi-globe me-1"></i>Portfolio</a>{% endif %}
+    </div>
+  </div>
+
+  <!-- Summary -->
+  {% if resume.summary %}
+  <div class="mb-4">
+    <h5 class="fw-bold text-primary text-uppercase border-bottom pb-1 mb-2" style="letter-spacing: 1px; font-size: 14px;">Professional Summary</h5>
+    <p class="text-dark lh-base small mb-0">{{ resume.summary }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Education -->
+  {% if educations %}
+  <div class="mb-4">
+    <h5 class="fw-bold text-primary text-uppercase border-bottom pb-1 mb-2" style="letter-spacing: 1px; font-size: 14px;">Education</h5>
+    {% for edu in educations %}
+    <div class="mb-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <strong class="text-dark">{{ edu.degree }}</strong>
+        <span class="text-muted small">{{ edu.start_year }} – {{ edu.end_year|default:"Present" }}</span>
+      </div>
+      <div class="text-secondary small">{{ edu.institution }}{% if edu.grade %} | Grade: {{ edu.grade }}{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Work Experience -->
+  {% if experiences %}
+  <div class="mb-4">
+    <h5 class="fw-bold text-primary text-uppercase border-bottom pb-1 mb-2" style="letter-spacing: 1px; font-size: 14px;">Experience</h5>
+    {% for exp in experiences %}
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <strong class="text-dark">{{ exp.job_title }} — {{ exp.company }}</strong>
+        <span class="text-muted small">{{ exp.start_date }} – {% if exp.is_current %}Present{% else %}{{ exp.end_date }}{% endif %}</span>
+      </div>
+      {% if exp.description %}<p class="text-secondary small mt-1 mb-0">{{ exp.description }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Projects -->
+  {% if projects %}
+  <div class="mb-4">
+    <h5 class="fw-bold text-primary text-uppercase border-bottom pb-1 mb-2" style="letter-spacing: 1px; font-size: 14px;">Projects</h5>
+    {% for proj in projects %}
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <strong class="text-dark">{{ proj.title }}</strong>
+        {% if proj.technologies %}<span class="badge bg-light text-dark border">{{ proj.technologies }}</span>{% endif %}
+      </div>
+      <p class="text-secondary small mt-1 mb-0">{{ proj.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Skills -->
+  {% if skills %}
+  <div class="mb-4">
+    <h5 class="fw-bold text-primary text-uppercase border-bottom pb-1 mb-2" style="letter-spacing: 1px; font-size: 14px;">Skills</h5>
+    <div class="d-flex flex-wrap gap-2">
+      {% for skill in skills %}
+      <span class="badge bg-light text-primary border px-3 py-1">{{ skill.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

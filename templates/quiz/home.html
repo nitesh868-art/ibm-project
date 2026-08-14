@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Quiz & Assessment Portal — PlacementPro{% endblock %}
+{% block page_title %}Quizzes & Assessments{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Quiz &amp; <span>Assessment Portal</span> &#128221;</h1>
+    <p class="dash-subtitle">Sharpen your knowledge with subject quizzes, practice questions &amp; mock tests</p>
+  </div>
+  <div>
+    <a href="{% url 'quiz:test_list' %}" class="dash-btn-primary"><i class="bi bi-card-checklist me-1"></i> All Mock Tests</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100">
+      <div class="bg-primary text-white p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-clock-history fs-3"></i></div>
+      <h5 class="fw-bold text-dark mb-1">Timed Quizzes</h5>
+      <p class="text-secondary small mb-3">Simulate real exam pressure</p>
+      <a href="{% url 'quiz:test_list' %}" class="dash-btn-outline btn-sm d-inline-flex">View Quizzes</a>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100">
+      <div class="bg-success text-white p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-filter-square fs-3"></i></div>
+      <h5 class="fw-bold text-dark mb-1">Practice Bank</h5>
+      <p class="text-secondary small mb-3">Filter by subject &amp; difficulty</p>
+      <a href="{% url 'quiz:practice' %}" class="dash-btn-outline btn-sm d-inline-flex">Start Practice</a>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100">
+      <div class="bg-warning text-dark p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-trophy fs-3"></i></div>
+      <h5 class="fw-bold text-dark mb-1">Leaderboard</h5>
+      <p class="text-secondary small mb-3">Compete with your peers</p>
+      <a href="{% url 'quiz:leaderboard' %}" class="dash-btn-outline btn-sm d-inline-flex">View Ranks</a>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-3">
+    <div class="dash-card text-center py-4 h-100">
+      <div class="bg-danger text-white p-3 rounded-circle d-inline-flex mb-3"><i class="bi bi-bookmark-star fs-3"></i></div>
+      <h5 class="fw-bold text-dark mb-1">Bookmarks</h5>
+      <p class="text-secondary small mb-3">Review saved hard questions</p>
+      <a href="{% url 'quiz:bookmarks' %}" class="dash-btn-outline btn-sm d-inline-flex">View Saved</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

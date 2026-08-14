@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}About Us{% endblock %}
+{% block body_class %}landing-body{% endblock %}
+
+{% block full_page %}
+<nav class="landing-navbar scrolled" style="background:white !important; position:relative;">
+  <div class="container d-flex align-items-center justify-content-between py-3">
+    <a href="{% url 'core:landing' %}" class="d-flex align-items-center gap-2">
+      <div class="sidebar-brand-logo">🎓</div>
+      <span style="font-size:18px;font-weight:800;color:#1e293b;">PlacementPro</span>
+    </a>
+    <div class="d-flex gap-2">
+      <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary btn-sm">Login</a>
+      <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Register</a>
+    </div>
+  </div>
+</nav>
+
+<div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);padding:80px 0 40px;margin-top:60px;">
+  <div class="container text-center">
+    <h1 style="color:white;font-size:3rem;font-weight:800;">About PlacementPro</h1>
+    <p style="color:rgba(255,255,255,.7);font-size:1.1rem;max-width:600px;margin:16px auto;">
+      Built by B.Tech students, for B.Tech students. A comprehensive AI-powered portal to prepare for campus placements.
+    </p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="row g-4 align-items-center">
+    <div class="col-lg-6" data-aos="fade-right">
+      <h2 class="section-title text-start mb-4">Our Mission</h2>
+      <p class="text-muted" style="font-size:15px;line-height:1.8;">
+        PlacementPro was created as a B.Tech Major Project with a vision to democratize placement preparation.
+        We believe every student deserves access to quality preparation resources, regardless of their background.
+      </p>
+      <p class="text-muted mt-3" style="font-size:15px;line-height:1.8;">
+        Our AI-powered platform combines the best of technology — OpenRouter &amp; NVIDIA Nemotron AI, Django backend,
+        and modern UI — to create a comprehensive learning management system specifically designed for
+        engineering students.
+      </p>
+    </div>
+    <div class="col-lg-6" data-aos="fade-left">
+      <div class="row g-3">
+        {% for stat,label in "500+,Students Helped|150+,Companies Covered|5000+,Questions|85%,Placement Rate"|split:"|" %}
+        <div class="col-6">
+          <div class="stat-card text-center justify-content-center flex-column py-4">
+            <div class="stat-value">{{ stat }}</div>
+            <div class="stat-label">{{ label }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock full_page %}

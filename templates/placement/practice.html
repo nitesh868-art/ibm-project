@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ category }} Practice Questions — PlacementPro{% endblock %}
+{% block page_title %}{{ category }} Practice{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title"><span>{{ category }}</span> Practice Questions &#128187;</h1>
+    <p class="dash-subtitle">Company-pattern practice questions with detailed explanations</p>
+  </div>
+  <div>
+    <a href="{% url 'placement:home' %}" class="dash-btn-outline">&larr; Back to Placement Prep</a>
+  </div>
+</div>
+
+{% if questions %}
+<div class="row g-4">
+  {% for q in questions %}
+  <div class="col-12">
+    <div class="dash-card">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="badge bg-secondary">Difficulty: {{ q.get_difficulty_display|default:q.difficulty|title }}</span>
+        {% if q.company %}<span class="badge bg-info text-dark"><i class="bi bi-building me-1"></i>{{ q.company.name }}</span>{% endif %}
+      </div>
+      <h6 class="fw-bold text-dark mb-3">Q{{ forloop.counter }}. {{ q.text }}</h6>
+
+      {% if q.code_snippet %}
+      <pre class="bg-dark text-light p-3 rounded mb-3"><code>{{ q.code_snippet }}</code></pre>
+      {% endif %}
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-6"><div class="p-2 border rounded bg-light"><strong>A:</strong> {{ q.option_a }}</div></div>
+        <div class="col-md-6"><div class="p-2 border rounded bg-light"><strong>B:</strong> {{ q.option_b }}</div></div>
+        <div class="col-md-6"><div class="p-2 border rounded bg-light"><strong>C:</strong> {{ q.option_c }}</div></div>
+        <div class="col-md-6"><div class="p-2 border rounded bg-light"><strong>D:</strong> {{ q.option_d }}</div></div>
+      </div>
+
+      <details class="mt-2">
+        <summary class="btn btn-sm btn-outline-primary fw-semibold">Show Correct Answer & Explanation</summary>
+        <div class="p-3 bg-light rounded mt-2 border-start border-3 border-success">
+          <strong class="text-success d-block mb-1">Correct Answer: Option {{ q.correct_answer|upper }}</strong>
+          <p class="text-secondary small mb-0">{{ q.explanation|default:"No explanation provided for this question." }}</p>
+        </div>
+      </details>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="dash-card text-center py-5">
+  <i class="bi bi-question-circle display-4 text-muted mb-3"></i>
+  <h4 class="fw-bold text-dark">No Questions Found</h4>
+  <p class="text-muted">Questions for {{ category }} will appear here once added to the database.</p>
+</div>
+{% endif %}
+{% endblock %}

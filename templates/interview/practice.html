@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}HR Interview Questions Practice — PlacementPro{% endblock %}
+{% block page_title %}HR Practice{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">HR Interview <span>Practice</span> &#127908;</h1>
+    <p class="dash-subtitle">Frequently asked HR questions, strategic tips and model response guides</p>
+  </div>
+  <div>
+    <a href="{% url 'interview:home' %}" class="dash-btn-outline">&larr; Back to Interview Hub</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for q in hr_questions %}
+  <div class="col-12">
+    <div class="dash-card">
+      <h6 class="fw-bold text-dark mb-2"><i class="bi bi-chat-quote-fill text-primary me-2"></i>Q{{ forloop.counter }}: {{ q.question }}</h6>
+      <div class="p-3 bg-light rounded border-start border-3 border-primary">
+        <strong class="d-block text-primary small mb-1"><i class="bi bi-lightbulb me-1"></i>Answering Tip:</strong>
+        <p class="text-secondary small mb-0">{{ q.tips }}</p>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

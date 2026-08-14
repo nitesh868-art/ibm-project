@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Test Result — {{ attempt.test.title }}{% endblock %}
+{% block page_title %}Test Assessment Result{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Test Result: <span>{{ attempt.test.title }}</span> &#127942;</h1>
+    <p class="dash-subtitle">Performance breakdown, correct answers and detailed solution keys</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'placement:mock_tests' %}" class="dash-btn-outline">&larr; All Mock Tests</a>
+    <a href="{% url 'quiz:start_test' pk=attempt.test.pk %}" class="dash-btn-primary"><i class="bi bi-arrow-repeat me-1"></i> Retake Test</a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Score Summary -->
+  <div class="col-md-4">
+    <div class="dash-card text-center p-4 h-100">
+      <h5 class="fw-bold text-dark mb-3">Overall Percentage</h5>
+      <div class="display-3 fw-bold text-primary mb-2">{{ attempt.percentage }}%</div>
+      <div class="badge {% if attempt.passed %}bg-success{% else %}bg-danger{% endif %} fs-6 px-3 py-2 mb-3">
+        {% if attempt.passed %}PASSED{% else %}NEEDS IMPROVEMENT{% endif %}
+      </div>
+      <p class="text-secondary small">Score: <strong>{{ attempt.correct_answers }} / {{ attempt.total_questions }}</strong></p>
+    </div>
+  </div>
+
+  <!-- Breakdown Stats -->
+  <div class="col-md-8">
+    <div class="row g-3 h-100">
+      <div class="col-md-4">
+        <div class="dash-card text-center h-100 border-start border-4 border-success">
+          <i class="bi bi-check-circle-fill text-success fs-1 mb-2"></i>
+          <h4 class="fw-bold text-dark mb-1">{{ attempt.correct_answers }}</h4>
+          <span class="text-muted small">Correct Answers</span>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dash-card text-center h-100 border-start border-4 border-danger">
+          <i class="bi bi-x-circle-fill text-danger fs-1 mb-2"></i>
+          <h4 class="fw-bold text-dark mb-1">{{ attempt.wrong_answers }}</h4>
+          <span class="text-muted small">Wrong Answers</span>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="dash-card text-center h-100 border-start border-4 border-secondary">
+          <i class="bi bi-dash-circle-fill text-secondary fs-1 mb-2"></i>
+          <h4 class="fw-bold text-dark mb-1">{{ attempt.skipped }}</h4>
+          <span class="text-muted small">Skipped</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if weak_topics or recommendations %}
+<!-- Weak Topics & Recommendations -->
+<div class="row g-4 mb-4">
+  {% if weak_topics %}
+  <div class="col-md-6">
+    <div class="dash-card h-100 border-start border-4 border-warning">
+      <h5 class="fw-bold text-dark mb-2"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Weak Topics Identified</h5>
+      <ul class="mb-0 ps-3 text-secondary small">
+        {% for wt in weak_topics %}
+        <li><strong>{{ wt }}</strong> — Needs revision based on incorrect responses</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+  {% if recommendations %}
+  <div class="col-md-{% if weak_topics %}6{% else %}12{% endif %}">
+    <div class="dash-card h-100 border-start border-4 border-info">
+      <h5 class="fw-bold text-dark mb-2"><i class="bi bi-lightbulb-fill text-info me-2"></i>Actionable Recommendations</h5>
+      <ul class="mb-0 ps-3 text-secondary small">
+        {% for rec in recommendations %}
+        <li>{{ rec }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Detailed Solutions -->
+<div class="dash-card">
+  <h5 class="fw-bold text-dark mb-3">Detailed Solution Key</h5>
+  {% if answers %}
+  <div class="vstack gap-3">
+    {% for ans in answers %}
+    <div class="p-3 bg-light rounded border-start border-4 {% if ans.is_correct %}border-success{% else %}border-danger{% endif %}">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <strong class="text-dark">Q{{ forloop.counter }}. {{ ans.question.text }}</strong>
+        <span class="badge {% if ans.is_correct %}bg-success{% else %}bg-danger{% endif %}">
+          {% if ans.is_correct %}Correct (+1){% else %}Incorrect (0){% endif %}
+        </span>
+      </div>
+      <div class="small text-secondary mb-1">Your Choice: <strong>Option {{ ans.selected_answer|upper }}</strong> | Correct Answer: <strong class="text-success">Option {{ ans.question.correct_answer|upper }}</strong></div>
+      {% if ans.question.explanation %}<p class="text-muted small mb-0 mt-2"><strong>Explanation:</strong> {{ ans.question.explanation }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-muted small">No recorded question answers for this test attempt.</p>
+  {% endif %}
+</div>
+{% endblock %}

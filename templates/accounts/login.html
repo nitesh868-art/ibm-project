@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Sign In — PlacementPro{% endblock %}
+{% block body_class %}auth-body{% endblock %}
+
+{% block full_page %}
+<div class="auth-page">
+
+  <!-- Left Panel -->
+  <div class="auth-left">
+    <div class="auth-left-inner">
+      <a href="{% url 'core:landing' %}" class="auth-logo">
+        <div class="auth-logo-icon">&#127891;</div>
+        <span>PlacementPro</span>
+      </a>
+      <h2 class="auth-tagline">Welcome<br><span>Back!</span></h2>
+      <p class="auth-desc">Sign in to continue your placement preparation journey. Your AI study planner, skill gap analysis, and mock tests are waiting for you.</p>
+
+      <div class="auth-features">
+        <div class="auth-feature"><span class="af-icon">&#129302;</span><span>AI-powered daily recommendations</span></div>
+        <div class="auth-feature"><span class="af-icon">&#128200;</span><span>Real-time placement readiness score</span></div>
+        <div class="auth-feature"><span class="af-icon">&#127919;</span><span>Personalised skill gap analysis</span></div>
+        <div class="auth-feature"><span class="af-icon">&#128221;</span><span>ATS resume scoring & feedback</span></div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="tcard-content">
+          <p>"PlacementPro helped me crack my Microsoft interview. The AI study plan was spot-on!"</p>
+          <div class="tcard-author">
+            <div class="tcard-avatar">RS</div>
+            <div><strong>Rahul Sharma</strong><small>SDE at Microsoft</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <div class="auth-form-header">
+        <h1>Welcome Back &#128075;</h1>
+        <p>Sign in to continue your preparation journey</p>
+      </div>
+
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert-custom alert-{{ message.tags }}">
+          <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}-fill me-2"></i>
+          {{ message }}
+          <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" id="loginForm" novalidate>
+        {% csrf_token %}
+
+        <div class="form-field-group">
+          <label for="login_username">Username <span class="req">*</span></label>
+          <div class="input-wrap">
+            <i class="bi bi-person field-icon"></i>
+            <input type="text" name="username" id="login_username" class="form-input"
+                   placeholder="Your username" required autofocus>
+          </div>
+        </div>
+
+        <div class="form-field-group">
+          <label for="login_password">Password <span class="req">*</span></label>
+          <div class="input-wrap">
+            <i class="bi bi-lock field-icon"></i>
+            <input type="password" name="password" id="login_password" class="form-input"
+                   placeholder="Your password" required>
+            <button type="button" class="pwd-eye" onclick="togglePwd('login_password','eyeL')">
+              <i class="bi bi-eye" id="eyeL"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-extras">
+          <label class="chk-label">
+            <input type="checkbox" name="remember_me" id="rememberMe" style="accent-color:#6366f1">
+            Remember me for 2 weeks
+          </label>
+          <a href="#" class="alink" style="font-size:13px">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <span class="btn-txt"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</span>
+          <span class="btn-load d-none"><span class="spin"></span> Signing in...</span>
+        </button>
+      </form>
+
+      <div class="divider"><span>or</span></div>
+
+      <div class="demo-creds">
+        <p class="demo-label">&#127891; Demo Credentials</p>
+        <div class="demo-row">
+          <button class="demo-btn" onclick="fillDemo('student1','student@123')">
+            <i class="bi bi-mortarboard me-1"></i>Student Demo
+          </button>
+          <button class="demo-btn" onclick="fillDemo('admin','admin@123')">
+            <i class="bi bi-shield-lock me-1"></i>Admin Demo
+          </button>
+        </div>
+        <small style="color:#94a3b8;display:block;text-align:center;margin-top:6px;font-size:11px">Demo accounts contain sample data for testing</small>
+      </div>
+
+      <p class="switch-txt">Don't have an account? <a href="{% url 'accounts:register' %}" class="alink">Create Account</a></p>
+    </div>
+  </div>
+</div>
+
+<style>
+.auth-body{margin:0;padding:0;overflow:hidden}
+.auth-page{display:flex;min-height:100vh;font-family:'Inter',system-ui,sans-serif}
+.auth-left{width:420px;min-width:360px;background:linear-gradient(145deg,#0f172a,#1e1b4b,#312e81);display:flex;align-items:center;justify-content:center;padding:40px;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(99,102,241,.15);top:-80px;right:-80px}
+.auth-left::after{content:'';position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(139,92,246,.1);bottom:-50px;left:-50px}
+.auth-left-inner{position:relative;z-index:1}
+.auth-logo{display:flex;align-items:center;gap:10px;text-decoration:none;margin-bottom:36px}
+.auth-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.auth-logo span{font-size:20px;font-weight:800;color:#fff}
+.auth-tagline{font-size:36px;font-weight:800;color:#fff;line-height:1.1;margin-bottom:14px}
+.auth-tagline span{background:linear-gradient(90deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.auth-desc{color:rgba(255,255,255,.65);font-size:14px;line-height:1.6;margin-bottom:28px}
+.auth-features{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.auth-feature{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.85);font-size:13px;font-weight:500}
+.af-icon{width:30px;height:30px;min-width:30px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.testimonial-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:16px}
+.tcard-content p{color:rgba(255,255,255,.85);font-size:13px;line-height:1.6;font-style:italic;margin-bottom:12px}
+.tcard-author{display:flex;align-items:center;gap:10px}
+.tcard-avatar{width:34px;height:34px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.tcard-author strong{display:block;color:#fff;font-size:13px}
+.tcard-author small{color:rgba(255,255,255,.5);font-size:11px;display:block}
+.auth-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;background:#f8fafc;overflow-y:auto}
+.auth-form-box{width:100%;max-width:420px;background:#fff;border-radius:24px;padding:40px;box-shadow:0 4px 40px rgba(0,0,0,.08)}
+.auth-form-header{margin-bottom:24px}
+.auth-form-header h1{font-size:26px;font-weight:800;color:#0f172a;margin:0 0 4px}
+.auth-form-header p{color:#64748b;font-size:14px;margin:0}
+.form-field-group{margin-bottom:16px}
+.form-field-group label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.req{color:#ef4444}
+.input-wrap{position:relative}
+.field-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:14px;z-index:1;pointer-events:none}
+.form-input{width:100%;padding:11px 12px 11px 36px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:10px;outline:none;transition:all .2s;background:#fff;color:#0f172a;box-sizing:border-box}
+.form-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.pwd-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;padding:2px 6px;font-size:14px}
+.pwd-eye:hover{color:#6366f1}
+.login-extras{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.chk-label{display:flex;align-items:center;gap:7px;font-size:13px;color:#374151;cursor:pointer}
+.alink{color:#6366f1;text-decoration:none;font-weight:600}
+.alink:hover{text-decoration:underline}
+.btn-submit{width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .25s}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.4)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.divider{text-align:center;margin:20px 0;position:relative}
+.divider::before{content:'';position:absolute;left:0;top:50%;width:100%;height:1px;background:#e2e8f0}
+.divider span{background:#fff;padding:0 12px;color:#94a3b8;font-size:13px;position:relative}
+.demo-creds{background:#f8fafc;border-radius:12px;padding:14px;margin-bottom:16px}
+.demo-label{font-size:12px;font-weight:700;color:#64748b;text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.demo-row{display:flex;gap:8px}
+.demo-btn{flex:1;padding:8px;background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;color:#374151;cursor:pointer;transition:all .2s}
+.demo-btn:hover{border-color:#6366f1;color:#6366f1}
+.switch-txt{text-align:center;margin-top:16px;font-size:13px;color:#64748b}
+.alert-custom{display:flex;align-items:center;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;position:relative}
+.alert-success{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.alert-danger{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.alert-info{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
+.alert-close{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;opacity:.6}
+@media(max-width:900px){.auth-left{display:none}}
+</style>
+
+<script>
+function togglePwd(id,icon){
+  const i=document.getElementById(id),ic=document.getElementById(icon);
+  i.type=i.type==="password"?"text":"password";
+  ic.className=i.type==="password"?"bi bi-eye":"bi bi-eye-slash";
+}
+function fillDemo(u,p){
+  document.getElementById("login_username").value=u;
+  document.getElementById("login_password").value=p;
+}
+document.getElementById("loginForm").addEventListener("submit",function(){
+  document.querySelector(".btn-txt").classList.add("d-none");
+  document.querySelector(".btn-load").classList.remove("d-none");
+});
+</script>
+{% endblock full_page %}

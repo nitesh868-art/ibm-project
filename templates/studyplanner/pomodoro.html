@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Pomodoro Timer — Study Planner{% endblock %}
+{% block page_title %}Pomodoro Timer{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Pomodoro <span>Focus Timer</span> &#9201;</h1>
+    <p class="dash-subtitle">25-minute focused study sessions with automatic session logging</p>
+  </div>
+  <div>
+    <a href="{% url 'studyplanner:log' %}" class="dash-btn-outline"><i class="bi bi-clock-history me-1"></i> View Study Logs</a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="dash-card text-center p-5">
+      <!-- Mode Switch Buttons -->
+      <div class="btn-group mb-4" role="group">
+        <button type="button" class="btn btn-primary px-4 py-2 fw-semibold" id="mode-work" onclick="setMode('work')">25m Work Focus</button>
+        <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-semibold" id="mode-short" onclick="setMode('short')">5m Short Break</button>
+        <button type="button" class="btn btn-outline-secondary px-4 py-2 fw-semibold" id="mode-long" onclick="setMode('long')">15m Long Break</button>
+      </div>
+
+      <!-- Digital Timer Display -->
+      <div class="display-1 fw-bold text-dark my-4 font-monospace" id="timer-display">25:00</div>
+
+      <!-- Topic Selector -->
+      <div class="col-md-6 mx-auto mb-4">
+        <label class="form-label text-muted small fw-bold">Active Focus Topic</label>
+        <select class="form-select text-center" id="topic-select">
+          <option value="">-- General Study Session --</option>
+          {% for t in topics %}
+          <option value="{{ t.subject.pk }}">{{ t.subject.name }}: {{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Timer Control Buttons -->
+      <div class="d-flex justify-content-center gap-3">
+        <button type="button" class="dash-btn-primary px-5 py-2 fs-5" id="btn-start" onclick="toggleTimer()"><i class="bi bi-play-fill me-1"></i> Start</button>
+        <button type="button" class="dash-btn-outline px-4 py-2 fs-5" onclick="resetTimer()"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let totalSeconds = 25 * 60;
+let currentSeconds = totalSeconds;
+let timerInterval = null;
+let isRunning = false;
+let currentMode = 'work';
+
+function updateDisplay() {
+  const mins = Math.floor(currentSeconds / 60);
+  const secs = currentSeconds % 60;
+  document.getElementById('timer-display').innerText =
+    (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  clearInterval(timerInterval);
+  isRunning = false;
+  document.getElementById('btn-start').innerHTML = '<i class="bi bi-play-fill me-1"></i> Start';
+
+  document.getElementById('mode-work').className = mode === 'work' ? 'btn btn-primary px-4 py-2 fw-semibold' : 'btn btn-outline-secondary px-4 py-2 fw-semibold';
+  document.getElementById('mode-short').className = mode === 'short' ? 'btn btn-success px-4 py-2 fw-semibold' : 'btn btn-outline-secondary px-4 py-2 fw-semibold';
+  document.getElementById('mode-long').className = mode === 'long' ? 'btn btn-info text-white px-4 py-2 fw-semibold' : 'btn btn-outline-secondary px-4 py-2 fw-semibold';
+
+  if (mode === 'work') totalSeconds = 25 * 60;
+  else if (mode === 'short') totalSeconds = 5 * 60;
+  else if (mode === 'long') totalSeconds = 15 * 60;
+
+  currentSeconds = totalSeconds;
+  updateDisplay();
+}
+
+function toggleTimer() {
+  if (isRunning) {
+    clearInterval(timerInterval);
+    isRunning = false;
+    document.getElementById('btn-start').innerHTML = '<i class="bi bi-play-fill me-1"></i> Resume';
+  } else {
+    isRunning = true;
+    document.getElementById('btn-start').innerHTML = '<i class="bi bi-pause-fill me-1"></i> Pause';
+    timerInterval = setInterval(() => {
+      if (currentSeconds > 0) {
+        currentSeconds--;
+        updateDisplay();
+      } else {
+        clearInterval(timerInterval);
+        isRunning = false;
+        alert('🎉 Session finished!');
+        if (currentMode === 'work') {
+          saveSessionLog();
+        }
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  document.getElementById('btn-start').innerHTML = '<i class="bi bi-play-fill me-1"></i> Start';
+  currentSeconds = totalSeconds;
+  updateDisplay();
+}
+
+function saveSessionLog() {
+  const subjectId = document.getElementById('topic-select').value;
+  const csrfToken = '{{ csrf_token }}';
+  const duration = Math.round(totalSeconds / 60);
+
+  fetch('/study-planner/log/add/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrfToken,
+    },
+    body: 'duration_minutes=' + duration + '&subject_id=' + subjectId + '&notes=Completed 25-minute Pomodoro session'
+  });
+}
+</script>
+{% endblock %}

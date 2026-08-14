@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Add Subject — Study Planner{% endblock %}
+{% block page_title %}Add Subject{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Add New <span>Subject</span> &#12474;</h1>
+    <p class="dash-subtitle">Track course progress, credits, priority and exam schedule</p>
+  </div>
+  <div>
+    <a href="{% url 'studyplanner:subjects' %}" class="dash-btn-outline">&larr; Back to Subjects</a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="dash-card">
+      <form method="POST" action="{% url 'studyplanner:add_subject' %}">
+        {% csrf_token %}
+        <div class="row g-3 mb-4">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Subject Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="e.g. Data Structures & Algorithms" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Subject Code</label>
+            <input type="text" name="code" class="form-control" placeholder="e.g. CS301">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Credits</label>
+            <input type="number" name="credits" class="form-control" value="4" min="1" max="10">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Priority</label>
+            <select name="priority" class="form-select">
+              <option value="1">High</option>
+              <option value="2" selected>Medium</option>
+              <option value="3">Low</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Difficulty (1-5)</label>
+            <select name="difficulty_level" class="form-select">
+              <option value="1">1 - Very Easy</option>
+              <option value="2">2 - Easy</option>
+              <option value="3" selected>3 - Moderate</option>
+              <option value="4">4 - Hard</option>
+              <option value="5">5 - Very Hard</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Exam Date</label>
+            <input type="date" name="exam_date" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Theme Color</label>
+            <input type="color" name="color" class="form-control form-control-color w-100" value="#6366f1">
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a href="{% url 'studyplanner:subjects' %}" class="dash-btn-outline">Cancel</a>
+          <button type="submit" class="dash-btn-primary"><i class="bi bi-plus-circle me-1"></i> Add Subject</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

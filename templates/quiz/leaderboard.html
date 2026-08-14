@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Leaderboard — PlacementPro Quizzes{% endblock %}
+{% block page_title %}Leaderboard{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Quiz <span>Leaderboard</span> &#127942;</h1>
+    <p class="dash-subtitle">See top ranking students across all mock test assessments</p>
+  </div>
+  <div>
+    <a href="{% url 'quiz:home' %}" class="dash-btn-outline">&larr; Back to Quizzes</a>
+  </div>
+</div>
+
+<div class="dash-card">
+  <h5 class="fw-bold text-dark mb-3">Top Assessment Scores</h5>
+  {% if leaderboard %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Rank</th>
+          <th>Student</th>
+          <th>Quizzes Taken</th>
+          <th>Average Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in leaderboard %}
+        <tr>
+          <td>
+            {% if forloop.counter == 1 %}&#129351; 1st{% elif forloop.counter == 2 %}&#129352; 2nd{% elif forloop.counter == 3 %}&#129353; 3rd{% else %}#{{ forloop.counter }}{% endif %}
+          </td>
+          <td>
+            <strong>{{ row.student__first_name }} {{ row.student__last_name }}</strong>
+            <span class="text-muted small d-block">@{{ row.student__username }}</span>
+          </td>
+          <td>{{ row.test_count }}</td>
+          <td><span class="badge bg-primary fs-6">{{ row.avg_score|floatformat:1 }}%</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <p class="text-muted">No test results available to compute rankings.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

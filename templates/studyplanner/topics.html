@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Topics — {{ subject.name }}{% endblock %}
+{% block page_title %}{{ subject.name }} — Topics{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'studyplanner:home' %}">Study Planner</a> /
+  <a href="{% url 'studyplanner:subjects' %}">My Subjects</a> /
+  <span>{{ subject.name }}</span>
+{% endblock %}
+
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Topics: <span>{{ subject.name }}</span> &#128218;</h1>
+    <p class="dash-subtitle">Track syllabus completion and update topic statuses</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'studyplanner:subjects' %}" class="dash-btn-outline">&larr; Back to Subjects</a>
+    <a href="{% url 'studyplanner:add_topic' subject_id=subject.pk %}" class="dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add Topic</a>
+  </div>
+</div>
+
+<!-- Progress Card -->
+<div class="dash-card mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="fw-bold text-dark mb-0">Overall Subject Progress</h6>
+    <span class="fw-bold text-primary" id="subject-completion-badge">{{ subject.completion_percentage }}%</span>
+  </div>
+  <div class="progress" style="height:12px;">
+    <div class="progress-bar bg-primary" id="subject-progress-bar" role="progressbar" data-width="{{ subject.completion_percentage|default:0 }}"></div>
+  </div>
+</div>
+
+<!-- Topics List -->
+<div class="dash-card">
+  <h5 class="fw-bold text-dark mb-3">Syllabus Topics</h5>
+  {% if topics %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Topic</th>
+          <th>Estimated Hours</th>
+          <th>Deadline</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for topic in topics %}
+        <tr id="topic-row-{{ topic.pk }}">
+          <td>
+            <strong class="d-block text-dark">{{ topic.name }}</strong>
+            {% if topic.description %}<span class="text-muted small">{{ topic.description }}</span>{% endif %}
+          </td>
+          <td>{{ topic.estimated_hours }} hrs</td>
+          <td>{{ topic.deadline|date:"d M Y"|default:"-" }}</td>
+          <td>
+            <select class="form-select form-select-sm status-select" data-topic-id="{{ topic.pk }}" style="width: 140px;">
+              {% for val, label in status_choices %}
+              <option value="{{ val }}" {% if topic.status == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-journal-text display-4 text-muted mb-2"></i>
+    <p class="text-muted">No topics added yet for this subject.</p>
+    <a href="{% url 'studyplanner:add_topic' subject_id=subject.pk %}" class="dash-btn-primary d-inline-flex">+ Add First Topic</a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const progressBar = document.getElementById('subject-progress-bar');
+  if (progressBar) {
+    progressBar.style.width = (progressBar.getAttribute('data-width') || 0) + '%';
+  }
+
+  document.querySelectorAll('.status-select').forEach(function(select) {
+    select.addEventListener('change', function() {
+      const topicId = this.getAttribute('data-topic-id');
+      const newStatus = this.value;
+      const csrfToken = '{{ csrf_token }}';
+
+      fetch('/study-planner/topics/' + topicId + '/update-status/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken,
+        },
+        body: 'status=' + encodeURIComponent(newStatus)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.status === 'ok') {
+          document.getElementById('subject-completion-badge').innerText = data.completion + '%';
+          document.getElementById('subject-progress-bar').style.width = data.completion + '%';
+        }
+      });
+    });
+  });
+});
+</script>
+{% endblock %}

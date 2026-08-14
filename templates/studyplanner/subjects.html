@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}My Subjects — PlacementPro{% endblock %}
+{% block page_title %}My Subjects{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'studyplanner:home' %}">Study Planner</a> / <span>My Subjects</span>
+{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">My Subjects 📚</h1>
+    <p class="dash-subtitle">Track unit progress, topics, study materials, and exam preparations</p>
+  </div>
+  <div>
+    <a href="{% url 'studyplanner:add_subject' %}" class="dash-btn-primary">
+      <i class="bi bi-plus-lg me-1"></i> Add New Subject
+    </a>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for subject in subjects %}
+  <div class="col-md-6 col-lg-4">
+    <div class="dash-card h-100 position-relative d-flex flex-column justify-content-between js-subj-card" data-border-color="{{ subject.color|default:'#6366f1' }}">
+      <div>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <span class="badge bg-light text-dark border fw-bold me-1">{{ subject.code|default:"SUBJ" }}</span>
+            <span class="badge bg-indigo-subtle text-indigo" style="font-size:11px">
+              {% if subject.semester %}Semester {{ subject.semester.number }}{% else %}Core Subject{% endif %}
+            </span>
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-sm border-0 text-muted" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'studyplanner:edit_subject' subject.id %}"><i class="bi bi-pencil me-2"></i>Edit Subject</a></li>
+              <li><a class="dropdown-item text-danger" href="{% url 'studyplanner:delete_subject' subject.id %}" onclick="return confirm('Delete subject?')"><i class="bi bi-trash me-2"></i>Delete</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="h5 fw-bold text-dark mb-1">{{ subject.name }}</h3>
+        <p class="text-muted small mb-3">
+          Priority: 
+          {% if subject.priority == 4 %}<span class="text-danger fw-bold">Critical</span>
+          {% elif subject.priority == 3 %}<span class="text-warning fw-bold">High</span>
+          {% else %}<span class="text-info fw-bold">Medium</span>{% endif %}
+          &bull; Credits: {{ subject.credits }}
+        </p>
+
+        <!-- Progress Bar -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between text-muted style-12 mb-1">
+            <span>Completion Progress</span>
+            <strong class="text-dark">{{ subject.completion_percentage }}%</strong>
+          </div>
+          <div class="progress" style="height: 8px; border-radius: 4px;">
+            <div class="progress-bar js-subj-progress" role="progressbar" data-width="{{ subject.completion_percentage }}" data-color="{{ subject.color|default:'#6366f1' }}" aria-valuenow="{{ subject.completion_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="d-flex gap-3 text-muted style-12 mb-3 bg-light p-2 rounded">
+          <div><i class="bi bi-layers me-1 text-primary"></i> 4 Units</div>
+          <div><i class="bi bi-book me-1 text-success"></i> {{ subject.topic_count|default:"0" }} Topics</div>
+          {% if subject.exam_date %}
+          <div class="text-danger"><i class="bi bi-calendar-event me-1"></i> Exam: {{ subject.exam_date|date:"M d" }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <a href="{% url 'studyplanner:topics' subject.id %}" class="dash-btn-primary w-100 justify-content-center">
+          Continue Learning &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="dash-card text-center py-5">
+      <div class="display-4 text-muted mb-3"><i class="bi bi-journal-x"></i></div>
+      <h4 class="fw-bold text-dark">No Subjects Added Yet</h4>
+      <p class="text-muted max-w-md mx-auto mb-4">Start your academic planning by adding the subjects you are studying this semester.</p>
+      <a href="{% url 'studyplanner:add_subject' %}" class="dash-btn-primary d-inline-flex">
+        <i class="bi bi-plus-lg me-1"></i> Add Your First Subject
+      </a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.js-subj-card').forEach(function(el) {
+    var c = el.getAttribute('data-border-color');
+    if (c) el.style.borderTop = '4px solid ' + c;
+  });
+  document.querySelectorAll('.js-subj-progress').forEach(function(el) {
+    var w = parseInt(el.getAttribute('data-width'), 10) || 0;
+    var c = el.getAttribute('data-color');
+    el.style.width = Math.min(w, 100) + '%';
+    if (c) el.style.backgroundColor = c;
+  });
+});
+</script>
+{% endblock %}
+

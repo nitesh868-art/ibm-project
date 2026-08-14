@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Available Quizzes & Mock Tests — PlacementPro{% endblock %}
+{% block page_title %}Quizzes & Mock Tests{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Quizzes &amp; <span>Mock Tests</span> &#128221;</h1>
+    <p class="dash-subtitle">Test your subject knowledge and practice under real exam timers</p>
+  </div>
+  <div>
+    <a href="{% url 'placement:home' %}" class="dash-btn-outline">&larr; Placement Prep</a>
+  </div>
+</div>
+
+{% if tests %}
+<div class="row g-4">
+  {% for test in tests %}
+  <div class="col-md-6 col-lg-4">
+    <div class="dash-card h-100 d-flex flex-column justify-content-between">
+      <div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="badge bg-primary fs-6"><i class="bi bi-clock me-1"></i>{{ test.duration_minutes }} Mins</span>
+          <span class="badge bg-secondary fs-6">{{ test.question_count }} Questions</span>
+        </div>
+        <h5 class="fw-bold text-dark mb-2">{{ test.title }}</h5>
+        <p class="text-secondary small mb-3">{{ test.description|truncatewords:15 }}</p>
+      </div>
+
+      <a href="{% url 'quiz:start_test' pk=test.pk %}" class="dash-btn-primary w-100 text-center">Start Quiz &rarr;</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="dash-card text-center py-5">
+  <i class="bi bi-patch-question display-4 text-muted mb-3"></i>
+  <h4 class="fw-bold text-dark">No Quizzes Available</h4>
+  <p class="text-muted">Quizzes will appear here when added by faculty.</p>
+</div>
+{% endif %}
+{% endblock %}

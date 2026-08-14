@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}AI Academic Copilot — PlacementPro{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-layout{display:grid;grid-template-columns:280px 1fr;gap:0;height:calc(100vh - 120px);background:var(--surface,#fff);border:1px solid var(--border-color,#e2e8f0);border-radius:20px;overflow:hidden}
+.chat-sidebar{background:var(--bg-light,#f8fafc);border-right:1px solid var(--border-color,#e2e8f0);display:flex;flex-direction:column;padding:0}
+.chat-sidebar-header{padding:20px;border-bottom:1px solid var(--border-color,#e2e8f0)}
+.chat-sidebar-header h3{font-size:14px;font-weight:700;color:var(--text-primary,#0f172a);margin-bottom:4px}
+.chat-sidebar-header p{font-size:12px;color:var(--text-muted,#64748b);margin:0}
+.chat-topics{padding:12px;flex:1;overflow-y:auto}
+.chat-topic-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted,#94a3b8);padding:8px 8px 4px;margin-bottom:4px}
+.chat-topic{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--text-primary,#374151);font-weight:500}
+.chat-topic:hover,.chat-topic.active{background:rgba(99,102,241,.15);color:var(--primary,#6366f1)}
+.chat-topic i{font-size:15px;width:18px}
+.chat-sidebar-footer{padding:12px;border-top:1px solid var(--border-color,#e2e8f0)}
+.clear-chat-btn{width:100%;padding:8px;background:transparent;border:1.5px solid var(--border-color,#e2e8f0);border-radius:10px;font-size:12px;font-weight:600;color:var(--text-muted,#64748b);cursor:pointer;transition:all .2s}
+.clear-chat-btn:hover{border-color:#ef4444;color:#ef4444}
+
+/* Main chat area */
+.chat-main{display:flex;flex-direction:column;min-height:0;background:var(--surface,#fff)}
+.chat-header{padding:12px 20px;border-bottom:1px solid var(--border-color,#e2e8f0);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--surface,#fff)}
+.chat-header-left{display:flex;align-items:center;gap:12px}
+.chat-ai-avatar{width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.chat-ai-info strong{display:block;font-size:14px;font-weight:700;color:var(--text-primary,#0f172a)}
+.chat-ai-info small{font-size:12px;color:#10b981;display:flex;align-items:center;gap:4px}
+.online-dot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.mode-pills{display:flex;gap:6px}
+.mode-pill{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:600;border:1px solid var(--border-color,#e2e8f0);background:var(--surface,#f8fafc);color:var(--text-muted,#64748b);cursor:pointer;transition:all .2s}
+.mode-pill.active{background:#6366f1;color:#fff;border-color:#6366f1}
+
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth;background:var(--surface,#fff)}
+.msg{display:flex;gap:10px;max-width:85%}
+.msg.user-msg{flex-direction:row-reverse;align-self:flex-end}
+.msg.ai-msg{align-self:flex-start}
+.msg-avatar{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ai-msg .msg-avatar{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+.user-msg .msg-avatar{background:#0f172a;color:#fff;font-size:11px;font-weight:700}
+.msg-bubble{padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.6}
+.ai-msg .msg-bubble{background:var(--bg-light,#f8fafc);border:1px solid var(--border-color,#e2e8f0);color:var(--text-primary,#0f172a);border-top-left-radius:4px}
+.user-msg .msg-bubble{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-top-right-radius:4px}
+.msg-bubble pre{background:var(--bg-input,rgba(0,0,0,.06));color:var(--text-primary);border:1px solid var(--border-color);padding:10px;border-radius:8px;overflow-x:auto;font-size:12px;margin:8px 0}
+.user-msg .msg-bubble pre{background:rgba(255,255,255,.15);color:#fff}
+.msg-bubble code{font-family:'Fira Code','Courier New',monospace;font-size:12px}
+.msg-time{font-size:10px;color:var(--text-muted,#94a3b8);margin-top:4px;text-align:right}
+.ai-msg .msg-time{text-align:left}
+.typing-indicator{display:flex;gap:4px;align-items:center;padding:14px 16px}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted,#94a3b8);animation:typingBounce 1.4s infinite ease-in-out}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+
+/* Input area */
+.chat-input-area{padding:16px 20px;border-top:1px solid var(--border-color,#e2e8f0);background:var(--surface,#fff)}
+.chat-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.suggestion-chip{padding:5px 12px;background:var(--surface,#f0f4ff);border:1px solid var(--border-color,#c7d2fe);border-radius:100px;font-size:12px;color:var(--primary,#6366f1);cursor:pointer;transition:all .2s;white-space:nowrap}
+.suggestion-chip:hover{background:rgba(99,102,241,.15);border-color:var(--primary,#6366f1)}
+.chat-form{display:flex;gap:8px;align-items:flex-end}
+.chat-textarea{flex:1;padding:11px 16px;font-size:14px;border:1.5px solid var(--border-color,#e2e8f0);border-radius:14px;outline:none;resize:none;max-height:120px;min-height:44px;font-family:inherit;color:var(--text-primary,#0f172a);background:var(--bg-input,#fff);transition:border-color .2s;line-height:1.5}
+.chat-textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.chat-send-btn{width:44px;height:44px;min-width:44px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:18px;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center}
+.chat-send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,.4)}
+.chat-send-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+@media(max-width:768px){.chat-layout{grid-template-columns:1fr;height:auto}.chat-sidebar{display:none}.chat-main{height:calc(100vh - 160px)}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h1 style="font-size:22px;font-weight:800;color:var(--text-primary,#0f172a);margin:0">AI Academic &amp; Career Tutor &#129302;</h1>
+    <p style="font-size:13px;color:#64748b;margin:0">Adapted for your B.Tech Academic Level &bull; NVIDIA Nemotron AI</p>
+  </div>
+</div>
+
+<div class="chat-layout">
+  <!-- Sidebar -->
+  <div class="chat-sidebar">
+    <div class="chat-sidebar-header">
+      <h3>&#129302; PlacementPro AI</h3>
+      <p>Powered by NVIDIA Nemotron</p>
+    </div>
+    <div class="chat-topics">
+      <div class="chat-topic-label">Learning Modes</div>
+      <div class="chat-topic active" onclick="setMode('tutor', this)"><i class="bi bi-robot"></i>General Academic Tutor</div>
+      <div class="chat-topic" onclick="setMode('teach_me', this)"><i class="bi bi-book"></i>Teach Me (Interactive)</div>
+      <div class="chat-topic" onclick="setMode('exam_prep', this)"><i class="bi bi-journal-check"></i>Exam Prep (2-Mark / 7-Mark)</div>
+
+      <div class="chat-topic-label" style="margin-top:12px">Quick Topics</div>
+      <div class="chat-topic" onclick="askTopic('Explain time complexity and Big O notation')"><i class="bi bi-lightning-charge"></i>DSA Concepts</div>
+      <div class="chat-topic" onclick="askTopic('What are ACID properties in DBMS? Explain with examples')"><i class="bi bi-database"></i>DBMS</div>
+      <div class="chat-topic" onclick="askTopic('Explain process scheduling algorithms in Operating Systems')"><i class="bi bi-cpu"></i>Operating Systems</div>
+      <div class="chat-topic" onclick="askTopic('Explain TCP vs UDP with use cases')"><i class="bi bi-wifi"></i>Computer Networks</div>
+      <div class="chat-topic" onclick="askTopic('Give me 5 aptitude questions on time and work')"><i class="bi bi-calculator"></i>Aptitude</div>
+      <div class="chat-topic" onclick="askTopic('Generate 5 HR interview questions and how to answer them')"><i class="bi bi-person-check"></i>HR Interview</div>
+    </div>
+    <div class="chat-sidebar-footer">
+      <button class="clear-chat-btn" onclick="clearChat()"><i class="bi bi-trash me-2"></i>Clear Conversation</button>
+    </div>
+  </div>
+
+  <!-- Main Chat -->
+  <div class="chat-main">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="chat-ai-avatar">&#129302;</div>
+        <div class="chat-ai-info">
+          <strong>PlacementPro AI Tutor</strong>
+          <small><span class="online-dot"></span> Online &bull; NVIDIA Nemotron</small>
+        </div>
+      </div>
+      <div class="mode-pills">
+        <span class="mode-pill active" id="pill-tutor" onclick="setMode('tutor')">Tutor</span>
+        <span class="mode-pill" id="pill-teach_me" onclick="setMode('teach_me')">Teach Me</span>
+        <span class="mode-pill" id="pill-exam_prep" onclick="setMode('exam_prep')">Exam Prep</span>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <!-- Welcome message -->
+      <div class="msg ai-msg">
+        <div class="msg-avatar">&#129302;</div>
+        <div>
+          <div class="msg-bubble">
+            <strong>Hello, {{ request.user.first_name|default:request.user.username }}!</strong> &#128075;<br><br>
+            I'm your <strong>AI Academic &amp; Career Copilot</strong> tuned for <strong>Year {{ request.user.student_profile.year|default:"3" }} {{ request.user.student_profile.branch|default:"CSE" }}</strong>.<br><br>
+            Select a mode above:<br>
+            &bull; <strong>Tutor Mode:</strong> Ask any programming or theory doubt.<br>
+            &bull; <strong>Teach Me Mode:</strong> Step-by-step interactive tutor.<br>
+            &bull; <strong>Exam Prep Mode:</strong> Generate 2-mark definitions &amp; 7-mark structured answers.<br>
+            &bull; <strong>My Notes:</strong> Upload lecture notes under <a href="/study-planner/materials/" class="text-primary">My Notes</a> for instant AI breakdowns!
+          </div>
+          <div class="msg-time">Just now</div>
+        </div>
+      </div>
+
+      {% if history %}
+        {% for msg in history %}
+        <div class="msg {% if msg.role == 'user' %}user-msg{% else %}ai-msg{% endif %}">
+          <div class="msg-avatar">{% if msg.role == 'user' %}{{ request.user.first_name|slice:":2"|upper|default:"U" }}{% else %}&#129302;{% endif %}</div>
+          <div>
+            <div class="msg-bubble">{{ msg.content }}</div>
+            <div class="msg-time">Earlier</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <div class="chat-input-area">
+      <div class="chat-suggestions" id="suggestions">
+        <span class="suggestion-chip" onclick="useSuggestion(this)">&#128204; Explain binary search</span>
+        <span class="suggestion-chip" onclick="useSuggestion(this)">&#128200; Time complexity of BFS?</span>
+        <span class="suggestion-chip" onclick="useSuggestion(this)">&#127919; Tell me about yourself answer</span>
+        <span class="suggestion-chip" onclick="useSuggestion(this)">&#128218; DBMS 3NF vs BCNF</span>
+      </div>
+      <div class="chat-form">
+        <textarea id="chatInput" class="chat-textarea" placeholder="Ask anything... (Shift+Enter for new line)" rows="1"
+          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="chat-send-btn" onclick="sendMessage()" id="sendBtn" title="Send (Enter)">
+          <i class="bi bi-send-fill" style="font-size:16px"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const csrfToken = '{{ csrf_token }}';
+const userInitials = '{{ request.user.first_name|slice:":2"|upper|default:"U" }}';
+let currentMode = 'tutor';
+
+function setMode(mode, el) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById('pill-' + mode);
+  if (pill) pill.classList.add('active');
+  if (el) {
+    document.querySelectorAll('.chat-sidebar .chat-topic').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function useSuggestion(el) {
+  document.getElementById('chatInput').value = el.textContent.replace(/^.{2}/,'').trim();
+  document.getElementById('suggestions').style.display = 'none';
+  document.getElementById('chatInput').focus();
+}
+
+function askTopic(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+function formatResponse(text) {
+  text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (m, lang, code) =>
+    `<pre><code>${code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`);
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function scrollToBottom() {
+  const msgs = document.getElementById('chatMessages');
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addMessage(role, content, isTyping = false) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+
+  if (isTyping) {
+    div.id = 'typingIndicator';
+    div.innerHTML = `
+      <div class="msg-avatar">&#129302;</div>
+      <div>
+        <div class="msg-bubble">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>`;
+  } else {
+    const avatar = role === 'user' ? userInitials : '&#129302;';
+    const bubble = role === 'user' ? content : formatResponse(content);
+    div.innerHTML = `
+      <div class="msg-avatar">${avatar}</div>
+      <div>
+        <div class="msg-bubble">${bubble}</div>
+        <div class="msg-time">${now}</div>
+      </div>`;
+  }
+
+  msgs.appendChild(div);
+  scrollToBottom();
+  return div;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const message = input.value.trim();
+  if (!message) return;
+
+  addMessage('user', message.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  input.value = '';
+  input.style.height = 'auto';
+
+  document.getElementById('suggestions').style.display = 'none';
+  addMessage('ai', '', true);
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const resp = await fetch('/chatbot/ask/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
+      body: JSON.stringify({message: message, mode: currentMode})
+    });
+    const data = await resp.json();
+
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+
+    if (data.success) {
+      addMessage('ai', data.response);
+    } else {
+      addMessage('ai', data.response || 'AI service is temporarily unavailable. Please try again.');
+    }
+  } catch (err) {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) typing.remove();
+    addMessage('ai', 'AI service is temporarily unavailable. Please try again.');
+  } finally {
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+async function clearChat() {
+  if (!confirm('Clear conversation history?')) return;
+  await fetch('/chatbot/clear/', {method:'POST', headers:{'X-CSRFToken': csrfToken}});
+  const msgs = document.getElementById('chatMessages');
+  while (msgs.children.length > 1) msgs.removeChild(msgs.lastChild);
+  document.getElementById('suggestions').style.display = 'flex';
+}
+
+scrollToBottom();
+</script>
+{% endblock %}

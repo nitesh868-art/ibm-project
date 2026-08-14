@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}My Notes & Study Materials — PlacementPro{% endblock %}
+{% block page_title %}My Notes & Materials{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">📄 My Notes & Study Materials</h1>
+    <p class="dash-subtitle">Upload your lecture notes, PDFs, or text materials for AI explanation and exam prep</p>
+  </div>
+  <div>
+    <button class="dash-btn-primary" data-bs-toggle="modal" data-bs-target="#uploadNotesModal">
+      <i class="bi bi-cloud-upload me-1"></i> Upload Notes
+    </button>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for item in materials %}
+  <div class="col-md-6 col-lg-4">
+    <div class="dash-card h-100 d-flex flex-direction-column justify-content-between">
+      <div>
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge {% if item.material_type == 'pdf' %}bg-danger{% elif item.material_type == 'doc' %}bg-primary{% else %}bg-purple{% endif %}">
+            {{ item.get_material_type_display }}
+          </span>
+          {% if item.is_demo %}<span class="badge bg-light text-secondary border">Demo Notes</span>{% endif %}
+        </div>
+
+        <h3 class="h6 fw-bold text-dark mb-2">{{ item.title }}</h3>
+        <p class="text-muted small mb-3">{{ item.description|default:item.extracted_text|truncatechars:90 }}</p>
+        <div class="text-muted style-12 mb-3">
+          <i class="bi bi-clock me-1"></i> Uploaded: {{ item.created_at|date:"M d, Y" }}
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 border-top pt-3 mt-2">
+        <a href="{% url 'studyplanner:explain_notes' item.id %}" class="dash-btn-primary flex-grow-1 justify-content-center btn-sm">
+          <i class="bi bi-robot me-1"></i> Explain with AI
+        </a>
+        {% if item.file %}
+        <a href="{{ item.file.url }}" target="_blank" class="dash-btn-outline btn-sm" title="Download File">
+          <i class="bi bi-download"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="dash-card text-center py-5">
+      <div class="display-4 text-muted mb-3"><i class="bi bi-folder-symlink"></i></div>
+      <h4 class="fw-bold text-dark">No Notes Uploaded Yet</h4>
+      <p class="text-muted max-w-md mx-auto mb-4">Upload your lecture notes, PDFs, or assignments and let PlacementPro AI summarize, explain, and generate exam questions for you.</p>
+      <button class="dash-btn-primary d-inline-flex" data-bs-toggle="modal" data-bs-target="#uploadNotesModal">
+        <i class="bi bi-cloud-upload me-1"></i> Upload Your First Set of Notes
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadNotesModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-bottom">
+        <h5 class="modal-title fw-bold"><i class="bi bi-file-earmark-arrow-up me-2 text-primary"></i>Upload Study Notes</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'studyplanner:upload_notes' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Notes Title *</label>
+            <input type="text" name="title" class="form-control" placeholder="e.g. DBMS Normalization 3NF Notes" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Material Type</label>
+            <select name="material_type" class="form-select">
+              <option value="notes">Text Notes / Summary</option>
+              <option value="pdf">PDF Document</option>
+              <option value="doc">Word Document (.docx)</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Upload File (PDF, DOCX, TXT - Max 10MB)</label>
+            <input type="file" name="file" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">Description / Notes Text</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Paste notes text directly or add a description..."></textarea>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="explain_now" value="1" id="explainNow" checked>
+            <label class="form-check-label small fw-bold text-primary" for="explainNow">
+              Explain with AI immediately after upload
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="dash-btn-primary">Upload & Process</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

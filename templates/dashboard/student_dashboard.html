@@ -1,0 +1,813 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% block title %}Dashboard — PlacementPro{% endblock %}
+{% block page_title %}Student Dashboard{% endblock %}
+{% block breadcrumb %}Home / Dashboard{% endblock %}
+
+{% block content %}
+<div class="dash-page">
+
+  <!-- ═══ Welcome Header ═══ -->
+  <div class="dash-welcome">
+    <div>
+      <h1 class="dash-title">
+        Good day, <span>{{ user.first_name|default:user.username }}</span>! 🎉
+      </h1>
+      <p class="dash-subtitle">
+        {% if student_profile %}
+          {{ student_profile.get_branch_display }} &bull;
+          Year {{ student_profile.year }} &bull;
+          Semester {{ student_profile.semester }} &bull;
+          CGPA: {{ student_profile.cgpa }}
+          {% if student_profile.roll_number %} &bull; Roll: {{ student_profile.roll_number }}{% endif %}
+        {% else %}
+          Complete your profile to unlock personalised AI recommendations.
+        {% endif %}
+      </p>
+    </div>
+    <div class="dash-actions">
+      <a href="{% url 'accounts:profile' %}" class="dash-btn-outline">
+        <i class="bi bi-person-gear"></i> Edit Profile
+      </a>
+      <a href="{% url 'chatbot:chat' %}" class="dash-btn-primary">
+        <i class="bi bi-robot"></i> Ask AI
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══ KPI Grid ═══ -->
+  <div class="kpi-grid">
+
+    <!-- Placement Readiness (wide card) -->
+    <div class="kpi-card kpi-main">
+      <div class="kpi-icon kpi-purple"><i class="bi bi-bullseye"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Placement Readiness</div>
+        <div class="kpi-value">{{ placement_readiness }}%</div>
+        <div class="kpi-bar">
+          <div class="kpi-fill js-kpi-fill {% if placement_readiness >= 75 %}bg-success{% elif placement_readiness >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+            data-width="{{ placement_readiness|default:0 }}"></div>
+        </div>
+        <div class="kpi-sub">
+          {% if placement_readiness >= 75 %}Ready for placement season!
+          {% elif placement_readiness >= 50 %}Good progress — keep going!
+          {% else %}More preparation needed{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Study Streak -->
+    <div class="kpi-card">
+      <div class="kpi-icon kpi-orange"><i class="bi bi-fire"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Study Streak</div>
+        <div class="kpi-value">{{ student_profile.study_streak|default:"0" }} days</div>
+        <div class="kpi-sub">Keep it going! 🔥</div>
+      </div>
+    </div>
+
+    <!-- Avg Test Score -->
+    <div class="kpi-card">
+      <div class="kpi-icon kpi-blue"><i class="bi bi-patch-check-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Avg Test Score</div>
+        <div class="kpi-value">{{ avg_score }}%</div>
+        <div class="kpi-sub">From {{ recent_tests|length }} recent tests</div>
+      </div>
+    </div>
+
+    <!-- Resume ATS -->
+    <div class="kpi-card">
+      <div class="kpi-icon kpi-green"><i class="bi bi-file-earmark-person-fill"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Resume ATS Score</div>
+        <div class="kpi-value">{{ resume_ats }}%</div>
+        <div class="kpi-sub">
+          {% if resume %}Resume uploaded
+          {% else %}<a href="{% url 'resume_builder:create' %}">Build resume</a>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Study Progress -->
+    <div class="kpi-card">
+      <div class="kpi-icon kpi-indigo"><i class="bi bi-journal-check"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Study Progress</div>
+        <div class="kpi-value">{{ avg_completion }}%</div>
+        <div class="kpi-sub">{{ total_subjects }} active subjects</div>
+      </div>
+    </div>
+
+  </div><!-- end kpi-grid -->
+
+  <!-- ═══ Topic Mastery & Weak Areas Engine ═══ -->
+  {% if student_context %}
+  <div class="row g-4 mb-4">
+    <!-- Weak Topics Warning / Priority Focus -->
+    <div class="col-md-6">
+      <div class="dash-card h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Priority Weak Topics (&lt; 50% Mastery)</h5>
+          <span class="badge bg-danger">{{ student_context.weak_topics_count }} Weak</span>
+        </div>
+        {% if student_context.weak_topics %}
+        <div class="vstack gap-2 mb-3">
+          {% for wt in student_context.weak_topics %}
+          <div class="p-3 rounded border-start border-3 border-danger" style="background:rgba(239,68,68,.06)">
+            <strong class="text-dark small d-block">⚠️ {{ wt }}</strong>
+            <span class="text-muted small">Needs revision &amp; practice questions</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-3 rounded bg-success-subtle text-success small mb-3">
+          🎉 Great job! No critical weak topics detected right now.
+        </div>
+        {% endif %}
+
+        {% if student_context.recommended_topic %}
+        <div class="p-3 rounded border border-primary" style="background:rgba(99,102,241,.06)">
+          <small class="text-primary fw-bold d-block mb-1">💡 Recommended Next Topic to Study:</small>
+          <strong class="text-dark">{{ student_context.recommended_topic.name }}</strong>
+          <div class="mt-2">
+            <a href="{% url 'quiz:practice' %}?subject={{ student_context.recommended_topic.subject.name }}" class="btn btn-sm btn-primary">
+              <i class="bi bi-play-circle me-1"></i> Practice Now
+            </a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Curated Learning Resources -->
+    <div class="col-md-6">
+      <div class="dash-card h-100">
+        <h5 class="fw-bold mb-3"><i class="bi bi-compass-fill text-indigo me-2"></i>Curated Learning Resources</h5>
+        <div class="vstack gap-2">
+          {% for res in student_context.curated_resources %}
+          <a href="{{ res.url }}" target="_blank" class="p-3 rounded border text-decoration-none d-flex align-items-center justify-content-between text-dark" style="background:var(--surface);transition:var(--transition)">
+            <div>
+              <strong class="d-block small"><i class="bi {{ res.icon }} text-primary me-2"></i>{{ res.title }}</strong>
+              <span class="text-muted small">{{ res.source }} &bull; {{ res.type }}</span>
+            </div>
+            <i class="bi bi-box-arrow-up-right text-muted small"></i>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+
+  <!-- ═══ Main Content Grid ═══ -->
+  <div class="dash-grid">
+
+    <!-- ─── LEFT COLUMN ─── -->
+    <div class="dash-col-main">
+
+      <!-- AI Daily Recommendations (loaded on demand by JS) -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-robot text-primary"></i> AI Daily Recommendations</div>
+          <div class="dch-actions">
+            <button class="dch-btn" id="recoLoadBtn" onclick="loadAIRecommendations()">
+              <i class="bi bi-arrow-clockwise"></i> Load
+            </button>
+            <a href="{% url 'chatbot:chat' %}" class="dch-link">Ask AI &rarr;</a>
+          </div>
+        </div>
+        <div class="ai-reco-box" id="aiRecoBox">
+          <div class="ai-reco-placeholder">
+            <i class="bi bi-robot"></i>
+            <p>Click <strong>Load</strong> to get your personalised AI recommendations for today.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Study Chart -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-bar-chart-line text-info"></i> Weekly Study Activity</div>
+          <a href="{% url 'analytics:home' %}" class="dch-link">Analytics &rarr;</a>
+        </div>
+        <canvas id="weeklyChart" height="120"></canvas>
+      </div>
+
+      <!-- Subjects Progress -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-book-fill text-success"></i> My Subjects</div>
+          <a href="{% url 'studyplanner:subjects' %}" class="dch-link">View All &rarr;</a>
+        </div>
+        {% if subjects %}
+          {% for subj in subjects %}
+          <div class="subj-item">
+            <div class="subj-color js-subj-color" data-color="{{ subj.color }}"></div>
+            <div class="subj-info">
+              <div class="subj-name">{{ subj.name }}</div>
+              <div class="subj-bar">
+                <div class="subj-fill js-subj-fill" data-width="{{ subj.completion_percentage }}" data-color="{{ subj.color }}"></div>
+              </div>
+            </div>
+            <div class="subj-pct">{{ subj.completion_percentage }}%</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-book"></i>
+            <p>No subjects added yet.</p>
+            <a href="{% url 'studyplanner:subjects' %}" class="dash-btn-primary btn-sm">Add Subjects</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Recent Tests -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-clipboard2-check-fill text-warning"></i> Recent Tests</div>
+          <a href="{% url 'quiz:home' %}" class="dch-link">All Tests &rarr;</a>
+        </div>
+        {% if recent_tests %}
+          <div class="table-wrap">
+            <table class="dash-table">
+              <thead>
+                <tr>
+                  <th>Test</th><th>Score</th><th>Grade</th><th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for t in recent_tests %}
+                <tr>
+                  <td>{{ t.test.title|truncatechars:30 }}</td>
+                  <td><strong>{{ t.percentage|floatformat:0 }}%</strong></td>
+                  <td>
+                    <span class="grade-badge {% if t.percentage >= 80 %}grade-a{% elif t.percentage >= 60 %}grade-b{% else %}grade-c{% endif %}">
+                      {% if t.percentage >= 80 %}A{% elif t.percentage >= 60 %}B{% else %}C{% endif %}
+                    </span>
+                  </td>
+                  <td>{{ t.started_at|date:"M d" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-clipboard2"></i>
+            <p>No test attempts yet.</p>
+            <a href="{% url 'quiz:home' %}" class="dash-btn-primary btn-sm">Take a Test</a>
+          </div>
+        {% endif %}
+      </div>
+
+    </div><!-- end left col -->
+
+    <!-- ─── RIGHT COLUMN ─── -->
+    <div class="dash-col-side">
+
+      <!-- Placement Readiness Breakdown -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-speedometer2 text-danger"></i> Readiness Breakdown</div>
+          <a href="{% url 'placement:readiness' %}" class="dch-link">Details &rarr;</a>
+        </div>
+        <div class="readiness-donut-wrap">
+          <canvas id="readinessChart" width="140" height="140"></canvas>
+          <div class="donut-center">
+            <span class="donut-val">{{ placement_readiness }}%</span>
+            <span class="donut-lbl">Ready</span>
+          </div>
+        </div>
+        <div class="readiness-items">
+          <div class="ri-item">
+            <span>DSA &amp; Coding</span>
+            <div class="ri-bar"><div class="ri-progress" data-ratio="{{ avg_score|floatformat:0 }}"></div></div>
+            <span>{{ avg_score|floatformat:0 }}%</span>
+          </div>
+          <div class="ri-item">
+            <span>Study Progress</span>
+            <div class="ri-bar"><div class="ri-progress" data-ratio="{{ avg_completion|default:0 }}"></div></div>
+            <span>{{ avg_completion }}%</span>
+          </div>
+          <div class="ri-item">
+            <span>Resume ATS</span>
+            <div class="ri-bar"><div class="ri-progress" data-ratio="{{ resume_ats|default:0 }}"></div></div>
+            <span>{{ resume_ats }}%</span>
+          </div>
+          <div class="ri-item">
+            <span>Profile</span>
+            <div class="ri-bar"><div class="ri-progress" data-ratio="{{ student_profile.profile_completion|default:0 }}"></div></div>
+            <span>{{ student_profile.profile_completion|default:0 }}%</span>
+          </div>
+        </div>
+        <a href="{% url 'placement:readiness' %}" class="full-readiness-btn">View Full Analysis &rarr;</a>
+      </div>
+
+      <!-- Today's Goals -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-check2-circle text-success"></i> Today's Goals</div>
+          <a href="{% url 'studyplanner:goals' %}" class="dch-link">Manage &rarr;</a>
+        </div>
+        {% if today_goals %}
+          {% for goal in today_goals %}
+          <div class="goal-item">
+            <div class="goal-check" data-goal-id="{{ goal.id }}" onclick="markGoal(this)">
+              <i class="bi bi-circle"></i>
+            </div>
+            <span>{{ goal.title }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state small">
+            <i class="bi bi-check2-all"></i>
+            <p>No goals for today.</p>
+            <a href="{% url 'studyplanner:goals' %}" class="dch-link">Add Goal</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Notifications -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-bell-fill text-warning"></i> Notifications</div>
+          <a href="{% url 'notifications:list' %}" class="dch-link">All &rarr;</a>
+        </div>
+        {% if notifications %}
+          {% for n in notifications %}
+          <div class="notif-item {% if not n.is_read %}notif-unread{% endif %}">
+            <div class="notif-dot"></div>
+            <div>
+              <div class="notif-title">{{ n.title }}</div>
+              <div class="notif-time">{{ n.created_at|timesince }} ago</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state small">
+            <i class="bi bi-bell-slash"></i>
+            <p>No new notifications.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <div class="dch-title"><i class="bi bi-lightning-charge-fill text-warning"></i> Quick Actions</div>
+        </div>
+        <div class="qa-grid">
+          <a href="{% url 'studyplanner:planner' %}" class="qa-btn">
+            <i class="bi bi-calendar3"></i><span>Study Plan</span>
+          </a>
+          <a href="{% url 'quiz:take_test' %}" class="qa-btn">
+            <i class="bi bi-clipboard2-check"></i><span>Quick Quiz</span>
+          </a>
+          <a href="{% url 'interview:start' %}" class="qa-btn">
+            <i class="bi bi-camera-video-fill"></i><span>AI Interview</span>
+          </a>
+          <a href="{% url 'resume_builder:create' %}" class="qa-btn">
+            <i class="bi bi-file-earmark-person"></i><span>Resume</span>
+          </a>
+          <a href="{% url 'placement:skill_gap' %}" class="qa-btn">
+            <i class="bi bi-bar-chart-steps"></i><span>Skill Gap</span>
+          </a>
+          <a href="{% url 'studyplanner:materials' %}" class="qa-btn">
+            <i class="bi bi-file-earmark-arrow-up"></i><span>My Notes</span>
+          </a>
+        </div>
+      </div>
+
+    </div><!-- end right col -->
+  </div><!-- end dash-grid -->
+</div><!-- end dash-page -->
+
+{{ weekly_data|json_script:"weekly-data-json" }}
+{{ placement_readiness|default:0|json_script:"placement-readiness-json" }}
+<input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
+
+<style>
+.dash-page { padding: 0 }
+
+/* Welcome */
+.dash-welcome {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-bottom: 24px; flex-wrap: wrap
+}
+.dash-title {
+  font-size: 24px; font-weight: 800; color: var(--text-primary, #0f172a); margin: 0 0 4px
+}
+.dash-title span {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text
+}
+.dash-subtitle { font-size: 13px; color: var(--text-muted, #64748b); margin: 0 }
+.dash-actions { display: flex; gap: 8px; flex-shrink: 0 }
+
+/* Buttons */
+.dash-btn-primary {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff; text-decoration: none; border-radius: 10px;
+  font-size: 13px; font-weight: 600; transition: all .2s
+}
+.dash-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,.4); color: #fff }
+.dash-btn-outline {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+  background: transparent; color: var(--text-secondary, #374151); text-decoration: none;
+  border-radius: 10px; font-size: 13px; font-weight: 600;
+  border: 1.5px solid var(--border, #e2e8f0); transition: all .2s
+}
+.dash-btn-outline:hover { border-color: #6366f1; color: #6366f1 }
+.btn-sm { padding: 6px 12px; font-size: 12px }
+
+/* KPI Grid */
+.kpi-grid {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px
+}
+.kpi-card {
+  background: var(--card-bg, #fff); border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px; padding: 16px; display: flex; align-items: flex-start;
+  gap: 12px; transition: all .2s; box-shadow: 0 1px 6px rgba(0,0,0,.04)
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.08) }
+.kpi-card.kpi-main { grid-column: span 2 }
+.kpi-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0
+}
+.kpi-purple { background: #ede9fe; color: #6366f1 }
+.kpi-orange { background: #fff7ed; color: #f97316 }
+.kpi-blue   { background: #eff6ff; color: #3b82f6 }
+.kpi-green  { background: #f0fdf4; color: #10b981 }
+.kpi-indigo { background: #eef2ff; color: #6366f1 }
+.kpi-body   { flex: 1; min-width: 0 }
+.kpi-label  { font-size: 11px; font-weight: 600; color: var(--text-muted, #64748b); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px }
+.kpi-value  { font-size: 22px; font-weight: 800; color: var(--text-primary, #0f172a); margin-bottom: 4px }
+.kpi-bar    { height: 4px; background: var(--border, #e2e8f0); border-radius: 4px; overflow: hidden; margin-bottom: 4px }
+.kpi-fill   { height: 100%; border-radius: 4px; transition: width 1s ease }
+.kpi-sub    { font-size: 11px; color: var(--text-muted, #64748b) }
+.kpi-sub a  { color: #6366f1; text-decoration: none }
+
+/* Dashboard grid */
+.dash-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px }
+.dash-col-main, .dash-col-side { display: flex; flex-direction: column; gap: 20px }
+.dash-card {
+  background: var(--card-bg, #fff); border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px; padding: 20px; box-shadow: 0 1px 6px rgba(0,0,0,.04)
+}
+.dash-card-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px
+}
+.dch-title {
+  font-size: 14px; font-weight: 700; color: var(--text-primary, #0f172a);
+  display: flex; align-items: center; gap: 8px
+}
+.dch-link { font-size: 12px; color: #6366f1; text-decoration: none; font-weight: 600 }
+.dch-link:hover { text-decoration: underline }
+.dch-actions { display: flex; align-items: center; gap: 8px }
+.dch-btn {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
+  background: #f0f4ff; color: #6366f1; border: none; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s
+}
+.dch-btn:hover { background: #ede9fe }
+
+/* AI Reco */
+.ai-reco-box { min-height: 80px }
+.ai-reco-placeholder {
+  text-align: center; padding: 20px; color: #94a3b8
+}
+.ai-reco-placeholder i { font-size: 28px; display: block; margin-bottom: 8px; opacity: .5 }
+.ai-reco-placeholder p { font-size: 13px; margin: 0 }
+.ai-reco-loading {
+  display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 13px; padding: 16px 0
+}
+.ai-spinner {
+  width: 18px; height: 18px; border: 2px solid #e2e8f0;
+  border-top-color: #6366f1; border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+.ai-task-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border, #f1f5f9)
+}
+.ai-task-item:last-child { border-bottom: none }
+.ai-task-priority { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0 }
+.priority-high   { background: #ef4444 }
+.priority-medium { background: #f59e0b }
+.priority-low    { background: #10b981 }
+.ai-task-text { font-size: 13px; color: var(--text-secondary, #374151); flex: 1 }
+.ai-task-time { font-size: 11px; color: #94a3b8; flex-shrink: 0 }
+.ai-tip-box {
+  background: #f0f4ff; border-radius: 10px; padding: 12px;
+  margin-top: 10px; font-size: 13px; color: #374151; border-left: 3px solid #6366f1
+}
+.ai-quote {
+  font-style: italic; color: #64748b; font-size: 13px;
+  margin-top: 10px; padding: 10px; background: #f8fafc;
+  border-radius: 8px; border-left: 3px solid #10b981
+}
+
+/* Subjects */
+.subj-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border, #f1f5f9)
+}
+.subj-item:last-child { border-bottom: none }
+.subj-color { width: 4px; height: 36px; border-radius: 4px; flex-shrink: 0 }
+.subj-info  { flex: 1 }
+.subj-name  { font-size: 13px; font-weight: 600; color: var(--text-primary, #0f172a); margin-bottom: 6px }
+.subj-bar   { height: 4px; background: var(--border, #e2e8f0); border-radius: 4px; overflow: hidden }
+.subj-fill  { height: 100%; border-radius: 4px; transition: width .5s ease }
+.subj-pct   { font-size: 12px; font-weight: 700; color: var(--text-secondary, #374151); width: 32px; text-align: right }
+
+/* Table */
+.table-wrap { overflow-x: auto }
+.dash-table { width: 100%; border-collapse: collapse; font-size: 13px }
+.dash-table th {
+  padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 700;
+  color: #94a3b8; text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid var(--border, #f1f5f9)
+}
+.dash-table td {
+  padding: 10px; border-bottom: 1px solid var(--border, #f1f5f9);
+  color: var(--text-secondary, #374151)
+}
+.grade-badge { padding: 2px 8px; border-radius: 100px; font-size: 11px; font-weight: 700 }
+.grade-a { background: #d1fae5; color: #065f46 }
+.grade-b { background: #fef3c7; color: #92400e }
+.grade-c { background: #fee2e2; color: #991b1b }
+
+/* Readiness Donut */
+.readiness-donut-wrap {
+  position: relative; width: 140px; height: 140px; margin: 0 auto 20px
+}
+.donut-center {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center
+}
+.donut-val { display: block; font-size: 24px; font-weight: 900; color: var(--text-primary, #0f172a) }
+.donut-lbl { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px }
+.readiness-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px }
+.ri-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary, #374151) }
+.ri-item span:first-child { width: 100px; flex-shrink: 0 }
+.ri-item span:last-child  { width: 32px; text-align: right; font-weight: 700 }
+.ri-bar { flex: 1; height: 4px; background: var(--border, #e2e8f0); border-radius: 4px; overflow: hidden }
+.ri-bar div { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 4px }
+.full-readiness-btn {
+  display: block; text-align: center; padding: 8px; background: #f0f4ff;
+  color: #6366f1; text-decoration: none; border-radius: 10px;
+  font-size: 13px; font-weight: 600; transition: all .2s
+}
+.full-readiness-btn:hover { background: #ede9fe; color: #6366f1 }
+
+/* Goals */
+.goal-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid var(--border, #f1f5f9); font-size: 13px; color: var(--text-secondary, #374151)
+}
+.goal-item:last-child { border-bottom: none }
+.goal-check {
+  width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: all .2s; flex-shrink: 0; font-size: 12px; color: #d1d5db
+}
+.goal-check:hover { border-color: #10b981; color: #10b981 }
+.goal-check.done  { background: #10b981; border-color: #10b981; color: #fff }
+
+/* Notifications */
+.notif-item {
+  display: flex; align-items: flex-start; gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid var(--border, #f1f5f9)
+}
+.notif-item:last-child { border-bottom: none }
+.notif-unread .notif-title { font-weight: 600 }
+.notif-dot { width: 8px; height: 8px; border-radius: 50%; background: #6366f1; margin-top: 4px; flex-shrink: 0 }
+.notif-item:not(.notif-unread) .notif-dot { background: #d1d5db }
+.notif-title { font-size: 13px; color: var(--text-secondary, #374151) }
+.notif-time  { font-size: 11px; color: #94a3b8; margin-top: 2px }
+
+/* Quick Actions */
+.qa-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px }
+.qa-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 8px; background: #f8fafc; border-radius: 12px;
+  text-decoration: none; color: var(--text-secondary, #374151);
+  transition: all .2s; border: 1px solid transparent;
+  font-size: 11px; font-weight: 600; text-align: center
+}
+.qa-btn i { font-size: 20px; color: #6366f1 }
+.qa-btn:hover { background: #ede9fe; border-color: #c7d2fe; color: #6366f1; transform: translateY(-2px) }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 24px 16px; color: #94a3b8 }
+.empty-state i { font-size: 32px; display: block; margin-bottom: 8px }
+.empty-state p { font-size: 13px; margin-bottom: 12px }
+.empty-state.small { padding: 16px }
+.empty-state.small i { font-size: 24px }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr 1fr }
+  .kpi-card.kpi-main { grid-column: span 1 }
+}
+@media (max-width: 900px) {
+  .dash-grid { grid-template-columns: 1fr }
+  .kpi-grid  { grid-template-columns: 1fr 1fr }
+}
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: 1fr }
+  .dash-actions { flex-wrap: wrap }
+}
+</style>
+
+{% block extra_js %}
+<script>
+// ─────────────────────────────────────────────────────────
+// Weekly Study Chart (Chart.js already loaded in base.html)
+// ─────────────────────────────────────────────────────────
+(function () {
+  var wCtx = document.getElementById('weeklyChart');
+  if (!wCtx) return;
+
+  var weeklyDataElem = document.getElementById('weekly-data-json');
+  var weeklyData = weeklyDataElem ? JSON.parse(weeklyDataElem.textContent || '[]') : [];
+  var labels = weeklyData.map(function(d) { return d.day; });
+  var hours = weeklyData.map(function(d) { return d.hours; });
+
+  new Chart(wCtx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Study Hours',
+        data: hours,
+        backgroundColor: 'rgba(99,102,241,0.7)',
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+})();
+
+// ─────────────────────────────────────────────────────────
+// Placement Readiness Donut
+// ─────────────────────────────────────────────────────────
+(function () {
+  var rCtx = document.getElementById('readinessChart');
+  if (!rCtx) return;
+
+  var readinessElem = document.getElementById('placement-readiness-json');
+  var score = readinessElem ? JSON.parse(readinessElem.textContent || '0') : 0;
+  var colour = score >= 75 ? '#10b981' : (score >= 50 ? '#f59e0b' : '#ef4444');
+
+  new Chart(rCtx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [score, 100 - score],
+        backgroundColor: [colour, 'rgba(0,0,0,0.06)'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
+  });
+})();
+
+// ─────────────────────────────────────────────────────────
+// KPI fill bar widths
+// ─────────────────────────────────────────────────────────
+document.querySelectorAll('.js-kpi-fill').forEach(function (el) {
+  var w = parseInt(el.getAttribute('data-width'), 10) || 0;
+  el.style.width = Math.min(w, 100) + '%';
+});
+
+// ─────────────────────────────────────────────────────────
+// Subject progress colors & widths
+// ─────────────────────────────────────────────────────────
+document.querySelectorAll('.js-subj-color').forEach(function (el) {
+  var c = el.getAttribute('data-color');
+  if (c) el.style.backgroundColor = c;
+});
+
+document.querySelectorAll('.js-subj-fill').forEach(function (el) {
+  var w = parseInt(el.getAttribute('data-width'), 10) || 0;
+  var c = el.getAttribute('data-color');
+  el.style.width = Math.min(w, 100) + '%';
+  if (c) el.style.backgroundColor = c;
+});
+
+// ─────────────────────────────────────────────────────────
+// Readiness progress bars
+// ─────────────────────────────────────────────────────────
+document.querySelectorAll('.ri-progress').forEach(function (el) {
+  var r = parseInt(el.getAttribute('data-ratio'), 10) || 0;
+  el.style.width = Math.min(r, 100) + '%';
+});
+
+// ─────────────────────────────────────────────────────────
+// Goal toggle
+// ─────────────────────────────────────────────────────────
+var csrfElem = document.getElementById('csrf-token-input');
+var CSRF_TOKEN = csrfElem ? csrfElem.value : '';
+
+function markGoal(el) {
+  var goalId = el.getAttribute('data-goal-id');
+  if (!goalId) return;
+
+  el.classList.toggle('done');
+  el.innerHTML = el.classList.contains('done')
+    ? '<i class="bi bi-check-circle-fill"></i>'
+    : '<i class="bi bi-circle"></i>';
+
+  fetch('/study-planner/goals/' + goalId + '/complete/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' }
+  }).catch(function () { /* silent — UI already toggled */ });
+}
+
+// ─────────────────────────────────────────────────────────
+// AI Recommendations — loaded ONLY when user clicks Load
+// ─────────────────────────────────────────────────────────
+var recoLoaded = false;
+
+function loadAIRecommendations() {
+  if (recoLoaded) return;
+
+  var box = document.getElementById('aiRecoBox');
+  var btn = document.getElementById('recoLoadBtn');
+  if (!box) return;
+
+  // Show loading state
+  box.innerHTML = '<div class="ai-reco-loading"><div class="ai-spinner"></div><span>Getting your personalised recommendations…</span></div>';
+  if (btn) btn.disabled = true;
+
+  fetch('/chatbot/daily-reco/', { credentials: 'same-origin' })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      recoLoaded = true;
+      if (btn) btn.textContent = '✓ Loaded';
+
+      if (data.success && data.recommendations) {
+        var r = data.recommendations;
+        var html = '';
+
+        if (r.greeting) {
+          html += '<div class="ai-quote">' + escapeHtml(r.greeting) + '</div>';
+        }
+        if (r.daily_tasks && r.daily_tasks.length) {
+          r.daily_tasks.forEach(function (t) {
+            var p = (t.priority || 'medium').toLowerCase();
+            html += '<div class="ai-task-item">'
+              + '<div class="ai-task-priority priority-' + p + '"></div>'
+              + '<div class="ai-task-text"><strong>' + escapeHtml(t.task) + '</strong></div>'
+              + '<div class="ai-task-time">' + escapeHtml(t.time || '') + '</div>'
+              + '</div>';
+          });
+        }
+        if (r.tip_of_day) {
+          html += '<div class="ai-tip-box"><strong>💡 Tip:</strong> ' + escapeHtml(r.tip_of_day) + '</div>';
+        }
+        if (r.motivation_quote) {
+          html += '<div class="ai-quote">"' + escapeHtml(r.motivation_quote) + '"</div>';
+        }
+        box.innerHTML = html || '<p style="font-size:13px;color:#94a3b8;padding:8px 0;">No recommendations available.</p>';
+      } else {
+        box.innerHTML = '<p style="font-size:13px;color:#94a3b8;padding:8px 0;">AI recommendations are temporarily unavailable. Please try again later.</p>';
+      }
+    })
+    .catch(function () {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry'; }
+      box.innerHTML = '<p style="font-size:13px;color:#94a3b8;padding:8px 0;">Could not load recommendations. Please try again.</p>';
+    });
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+</script>
+{% endblock %}
+{% endblock %}

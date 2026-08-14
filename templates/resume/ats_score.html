@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}ATS Resume Score — {{ resume.title }}{% endblock %}
+{% block page_title %}ATS Score & AI Analysis{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">ATS Resume Analysis: <span>{{ resume.title }}</span> &#127919;</h1>
+    <p class="dash-subtitle">AI-powered recruiter evaluation for Indian tech companies</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'resume_builder:edit' pk=resume.pk %}" class="dash-btn-outline">&larr; Edit Resume</a>
+    <a href="{% url 'resume_builder:download' pk=resume.pk %}" class="dash-btn-primary"><i class="bi bi-download me-1"></i> Download PDF</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- ATS Score Gauge Card -->
+  <div class="col-md-4">
+    <div class="dash-card text-center p-4">
+      <h5 class="fw-bold text-dark mb-3">Overall ATS Score</h5>
+      <div class="display-3 fw-bold text-primary mb-2">{{ review.ats_score|default:resume.ats_score|default:70 }}<span class="fs-4 text-muted">/100</span></div>
+      <div class="badge bg-success fs-6 px-3 py-2 mb-3">Grade: {{ review.grade|default:"B+" }}</div>
+      <div class="progress mb-3" style="height: 10px;">
+        <div class="progress-bar bg-primary" id="ats-progress-bar" role="progressbar" data-width="{{ review.ats_score|default:resume.ats_score|default:70 }}"></div>
+      </div>
+      <p class="text-secondary small">{{ review.overall_feedback|default:"Your resume has a solid base. Review the AI suggestions below to optimize keywords and formatting." }}</p>
+    </div>
+  </div>
+
+  <!-- Detailed Analysis -->
+  <div class="col-md-8">
+    <!-- Strengths & Weaknesses -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="dash-card h-100 border-start border-4 border-success">
+          <h6 class="fw-bold text-success mb-2"><i class="bi bi-check-circle-fill me-2"></i>Strengths</h6>
+          <ul class="mb-0 ps-3 text-secondary small">
+            {% for s in review.strengths %}
+            <li>{{ s }}</li>
+            {% empty %}
+            <li>Good baseline section layout</li>
+            <li>Contact details present</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="dash-card h-100 border-start border-4 border-warning">
+          <h6 class="fw-bold text-warning mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Areas to Improve</h6>
+          <ul class="mb-0 ps-3 text-secondary small">
+            {% for w in review.weaknesses %}
+            <li>{{ w }}</li>
+            {% empty %}
+            <li>Add more quantifiable metrics to projects</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suggestions List -->
+    <div class="dash-card mb-4">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-lightbulb-fill text-primary me-2"></i>Actionable AI Suggestions</h5>
+      {% for sug in review.suggestions %}
+      <div class="p-3 bg-light rounded mb-2 border-start border-3 border-primary">
+        <strong class="d-block text-dark small mb-1">Section: {{ sug.section }}</strong>
+        <p class="text-secondary small mb-0">{{ sug.suggestion }}</p>
+      </div>
+      {% empty %}
+      <p class="text-muted small">No specific section warnings. Your resume formatting is clean.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Missing Keywords -->
+    {% if review.keywords_missing %}
+    <div class="dash-card">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-tags-fill text-danger me-2"></i>Missing ATS Keywords</h5>
+      <div class="d-flex flex-wrap gap-2">
+        {% for kw in review.keywords_missing %}
+        <span class="badge bg-danger fs-6 px-3 py-2">+ {{ kw }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const bar = document.getElementById('ats-progress-bar');
+  if (bar) {
+    const w = parseInt(bar.getAttribute('data-width'), 10) || 0;
+    bar.style.width = Math.min(Math.max(w, 0), 100) + '%';
+  }
+});
+</script>
+{% endblock %}

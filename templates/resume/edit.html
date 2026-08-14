@@ -1,0 +1,251 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Edit {{ resume.title }} — PlacementPro{% endblock %}
+{% block page_title %}Edit Resume{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Edit Resume: <span>{{ resume.title }}</span> &#9999;&#65039;</h1>
+    <p class="dash-subtitle">Manage personal details, education, experience, projects, skills & certifications</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'resume_builder:preview' pk=resume.pk %}" class="dash-btn-outline" target="_blank"><i class="bi bi-eye me-1"></i> Preview</a>
+    <a href="{% url 'resume_builder:download' pk=resume.pk %}" class="dash-btn-outline"><i class="bi bi-download me-1"></i> Download PDF</a>
+    <a href="{% url 'resume_builder:ats_score' pk=resume.pk %}" class="dash-btn-primary"><i class="bi bi-speedometer2 me-1"></i> Check ATS Score</a>
+  </div>
+</div>
+
+<!-- Personal Details Form -->
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-person-circle text-primary me-2"></i>Personal Details</h5>
+  <form method="POST" action="{% url 'resume_builder:edit' pk=resume.pk %}">
+    {% csrf_token %}
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Resume Title</label>
+        <input type="text" name="title" class="form-control" value="{{ resume.title }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Template</label>
+        <select name="template" class="form-select">
+          {% for val, label in templates %}
+          <option value="{{ val }}" {% if resume.template == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Full Name</label>
+        <input type="text" name="full_name" class="form-control" value="{{ resume.full_name }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Email</label>
+        <input type="email" name="email" class="form-control" value="{{ resume.email }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Phone</label>
+        <input type="text" name="phone" class="form-control" value="{{ resume.phone }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Location</label>
+        <input type="text" name="location" class="form-control" value="{{ resume.location }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">LinkedIn</label>
+        <input type="url" name="linkedin" class="form-control" value="{{ resume.linkedin }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">GitHub</label>
+        <input type="url" name="github" class="form-control" value="{{ resume.github }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Portfolio</label>
+        <input type="url" name="portfolio" class="form-control" value="{{ resume.portfolio }}">
+      </div>
+      <div class="col-12">
+        <label class="form-label small fw-bold">Summary</label>
+        <textarea name="summary" class="form-control" rows="3">{{ resume.summary }}</textarea>
+      </div>
+    </div>
+    <button type="submit" class="dash-btn-primary btn-sm"><i class="bi bi-save me-1"></i> Update Personal Info</button>
+  </form>
+</div>
+
+<!-- Education Section -->
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-mortarboard-fill text-indigo me-2"></i>Education</h5>
+  {% if educations %}
+  <div class="table-responsive mb-3">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Degree</th>
+          <th>Institution</th>
+          <th>Years</th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for edu in educations %}
+        <tr>
+          <td class="fw-semibold">{{ edu.degree }}</td>
+          <td>{{ edu.institution }}</td>
+          <td>{{ edu.start_year }} - {{ edu.end_year|default:"Present" }}</td>
+          <td>{{ edu.grade|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Add Education Form -->
+  <form method="POST" action="{% url 'resume_builder:add_education' resume_pk=resume.pk %}" class="bg-light p-3 rounded">
+    {% csrf_token %}
+    <h6 class="fw-bold small mb-2 text-primary">+ Add Education</h6>
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input type="text" name="degree" class="form-control form-control-sm" placeholder="Degree (e.g. B.Tech CSE)" required>
+      </div>
+      <div class="col-md-4">
+        <input type="text" name="institution" class="form-control form-control-sm" placeholder="University / College" required>
+      </div>
+      <div class="col-md-2">
+        <input type="number" name="start_year" class="form-control form-control-sm" placeholder="Start Year" value="2022" required>
+      </div>
+      <div class="col-md-2">
+        <input type="number" name="end_year" class="form-control form-control-sm" placeholder="End Year (e.g. 2026)">
+      </div>
+      <div class="col-md-4">
+        <input type="text" name="grade" class="form-control form-control-sm" placeholder="CGPA / Percentage (e.g. 8.5 CGPA)">
+      </div>
+      <div class="col-md-8 text-end">
+        <button type="submit" class="btn btn-sm btn-primary px-3"><i class="bi bi-plus-lg me-1"></i> Add Education</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Work Experience Section -->
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-briefcase-fill text-success me-2"></i>Work Experience & Internships</h5>
+  {% if experiences %}
+  <div class="mb-3">
+    {% for exp in experiences %}
+    <div class="p-3 bg-light rounded mb-2 border-start border-3 border-success">
+      <div class="d-flex justify-content-between">
+        <strong>{{ exp.job_title }} at {{ exp.company }}</strong>
+        <span class="text-muted small">{{ exp.start_date }} - {% if exp.is_current %}Present{% else %}{{ exp.end_date }}{% endif %}</span>
+      </div>
+      {% if exp.description %}<p class="text-secondary small mb-0 mt-1">{{ exp.description }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Add Experience Form -->
+  <form method="POST" action="{% url 'resume_builder:add_experience' resume_pk=resume.pk %}" class="bg-light p-3 rounded">
+    {% csrf_token %}
+    <h6 class="fw-bold small mb-2 text-success">+ Add Work Experience / Internship</h6>
+    <div class="row g-2">
+      <div class="col-md-4">
+        <input type="text" name="job_title" class="form-control form-control-sm" placeholder="Job Title (e.g. SDE Intern)" required>
+      </div>
+      <div class="col-md-4">
+        <input type="text" name="company" class="form-control form-control-sm" placeholder="Company Name" required>
+      </div>
+      <div class="col-md-4">
+        <input type="text" name="location" class="form-control form-control-sm" placeholder="Location">
+      </div>
+      <div class="col-md-4">
+        <label class="small text-muted">Start Date</label>
+        <input type="date" name="start_date" class="form-control form-control-sm" required>
+      </div>
+      <div class="col-md-4">
+        <label class="small text-muted">End Date</label>
+        <input type="date" name="end_date" class="form-control form-control-sm">
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" name="is_current" id="is_current">
+          <label class="form-check-label small" for="is_current">Currently working here</label>
+        </div>
+      </div>
+      <div class="col-12">
+        <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Key responsibilities and achievements..."></textarea>
+      </div>
+      <div class="col-12 text-end mt-2">
+        <button type="submit" class="btn btn-sm btn-success px-3"><i class="bi bi-plus-lg me-1"></i> Add Experience</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Projects Section -->
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-code-square text-warning me-2"></i>Projects</h5>
+  {% if projects %}
+  <div class="mb-3">
+    {% for proj in projects %}
+    <div class="p-3 bg-light rounded mb-2 border-start border-3 border-warning">
+      <strong>{{ proj.title }}</strong>
+      {% if proj.technologies %}<span class="badge bg-secondary ms-2">{{ proj.technologies }}</span>{% endif %}
+      <p class="text-secondary small mb-0 mt-1">{{ proj.description }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Add Project Form -->
+  <form method="POST" action="{% url 'resume_builder:add_project' resume_pk=resume.pk %}" class="bg-light p-3 rounded">
+    {% csrf_token %}
+    <h6 class="fw-bold small mb-2 text-warning">+ Add Project</h6>
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input type="text" name="title" class="form-control form-control-sm" placeholder="Project Title" required>
+      </div>
+      <div class="col-md-6">
+        <input type="text" name="technologies" class="form-control form-control-sm" placeholder="Technologies Used (e.g. Python, Django, React)">
+      </div>
+      <div class="col-md-6">
+        <input type="url" name="github_link" class="form-control form-control-sm" placeholder="GitHub Repository Link">
+      </div>
+      <div class="col-md-6">
+        <input type="url" name="live_link" class="form-control form-control-sm" placeholder="Live Demo Link">
+      </div>
+      <div class="col-12">
+        <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Project description, impact, key features..." required></textarea>
+      </div>
+      <div class="col-12 text-end mt-2">
+        <button type="submit" class="btn btn-sm btn-warning text-dark px-3"><i class="bi bi-plus-lg me-1"></i> Add Project</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Skills Section -->
+<div class="dash-card mb-4">
+  <h5 class="fw-bold text-dark mb-3 border-bottom pb-2"><i class="bi bi-cpu-fill text-danger me-2"></i>Skills</h5>
+  {% if skills %}
+  <div class="mb-3 d-flex flex-wrap gap-2">
+    {% for skill in skills %}
+    <span class="badge bg-primary fs-6 px-3 py-2">{{ skill.name }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Add Skills Form -->
+  <form method="POST" action="{% url 'resume_builder:add_skill' resume_pk=resume.pk %}" class="bg-light p-3 rounded">
+    {% csrf_token %}
+    <h6 class="fw-bold small mb-2 text-danger">+ Add Skills</h6>
+    <div class="row g-2 align-items-center">
+      <div class="col-md-8">
+        <input type="text" name="skills" class="form-control form-control-sm" placeholder="Enter skills separated by comma (e.g. Python, Data Structures, SQL, Git)" required>
+      </div>
+      <div class="col-md-4 text-end">
+        <button type="submit" class="btn btn-sm btn-danger px-3"><i class="bi bi-plus-lg me-1"></i> Add Skills</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Target Companies{% endblock %}
+{% block page_title %}Recruiting Companies{% endblock %}
+{% block breadcrumb %}Placement / Companies{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h4 class="fw-800 mb-1">Recruiting Companies 🏢</h4>
+    <p class="text-muted mb-0" style="font-size:14px;">150+ Top Tech Companies & Startups Hiring Freshers</p>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3">
+      <div class="col-md-4">
+        <input type="text" name="q" class="form-control" placeholder="Search company name..." value="{{ request.GET.q }}">
+      </div>
+      <div class="col-md-4">
+        <select name="type" class="form-select">
+          <option value="">All Company Types</option>
+          <option value="product" {% if request.GET.type == 'product' %}selected{% endif %}>Product Based</option>
+          <option value="service" {% if request.GET.type == 'service' %}selected{% endif %}>Service Based</option>
+          <option value="startup" {% if request.GET.type == 'startup' %}selected{% endif %}>Startup</option>
+          <option value="consulting" {% if request.GET.type == 'consulting' %}selected{% endif %}>Consulting</option>
+        </select>
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+        <a href="{% url 'companies:list' %}" class="btn btn-outline-secondary">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4">
+  {% for company in companies %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="fw-bold mb-1">{{ company.name }}</h5>
+            <span class="badge bg-primary-subtle text-primary" style="font-size:11px;">{{ company.get_company_type_display }}</span>
+          </div>
+          <span class="badge bg-success-subtle text-success">Active Hiring</span>
+        </div>
+        <div class="mb-3" style="font-size:13px;">
+          <div><i class="bi bi-cash me-2 text-success"></i>Package: <strong>₹{{ company.min_package }} - {{ company.max_package }} LPA</strong></div>
+          <div><i class="bi bi-star me-2 text-warning"></i>Min CGPA: <strong>{{ company.min_cgpa }}</strong></div>
+          <div><i class="bi bi-mortarboard me-2 text-info"></i>Branches: {{ company.eligible_branches }}</div>
+        </div>
+        <a href="{% url 'companies:detail' company.pk %}" class="btn btn-outline-primary btn-sm w-100">View Hiring Process & Questions</a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center py-5 text-muted">No companies match your search criteria.</div>
+  {% endfor %}
+</div>
+{% endblock %}

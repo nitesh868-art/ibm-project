@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Daily Study Logs — Study Planner{% endblock %}
+{% block page_title %}Daily Study Logs{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Daily <span>Study Logs</span> &#128211;</h1>
+    <p class="dash-subtitle">Track study duration, subject breakdown and session notes</p>
+  </div>
+  <div>
+    <a href="{% url 'studyplanner:pomodoro' %}" class="dash-btn-primary"><i class="bi bi-stopwatch me-1"></i> Start Pomodoro</a>
+  </div>
+</div>
+
+<div class="dash-card">
+  <h5 class="fw-bold text-dark mb-3">Study History</h5>
+  {% if logs %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Date</th>
+          <th>Subject</th>
+          <th>Duration</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="fw-semibold">{{ log.date|date:"d M Y" }}</td>
+          <td>
+            {% if log.subject %}
+            <span class="badge js-subj-badge" data-color="{{ log.subject.color|default:'#6366f1' }}">{{ log.subject.name }}</span>
+            {% else %}
+            <span class="badge bg-secondary">General</span>
+            {% endif %}
+          </td>
+          <td class="fw-bold text-primary">{{ log.duration_minutes }} mins</td>
+          <td class="text-secondary small">{{ log.notes|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-journal-x display-4 text-muted mb-2"></i>
+    <p class="text-muted">No study logs recorded yet. Use the Pomodoro timer to automatically record study sessions.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.js-subj-badge').forEach(function(el) {
+    var c = el.getAttribute('data-color');
+    if (c) el.style.backgroundColor = c;
+  });
+});
+</script>
+{% endblock %}

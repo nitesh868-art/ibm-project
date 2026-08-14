@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}AI Interview Practice — PlacementPro{% endblock %}
+{% block page_title %}AI Interview Practice{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">AI Interview <span>Generator</span> &#129302;</h1>
+    <p class="dash-subtitle">Generate custom technical, HR and coding questions powered by OpenRouter AI</p>
+  </div>
+  <div>
+    <a href="{% url 'interview:home' %}" class="dash-btn-outline">&larr; Back to Interview Hub</a>
+  </div>
+</div>
+
+<!-- Generator Controls Card -->
+<div class="dash-card mb-4">
+  <form id="ai-interview-form" onsubmit="generateQuestions(event)">
+    {% csrf_token %}
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-bold">Target Role</label>
+        <select id="role-select" class="form-select">
+          <option value="Software Engineer">Software Engineer (SDE)</option>
+          <option value="Frontend Engineer">Frontend Engineer</option>
+          <option value="Backend Engineer">Backend Engineer</option>
+          <option value="Data Analyst">Data Analyst</option>
+          <option value="DevOps Engineer">DevOps Engineer</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Company Type</label>
+        <select id="company-select" class="form-select">
+          <option value="product">Product Based (FAANG / Unicorn)</option>
+          <option value="service">Service Based (TCS, Infosys, Wipro)</option>
+          <option value="startup">Tech Startup</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-bold">Difficulty</label>
+        <select id="diff-select" class="form-select">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="dash-btn-primary w-100" id="gen-btn"><i class="bi bi-cpu me-1"></i> Generate</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Results Container -->
+<div id="ai-questions-container" style="display: none;">
+  <div class="row g-4 mb-4">
+    <!-- Technical Questions -->
+    <div class="col-12">
+      <div class="dash-card">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-code-slash text-primary me-2"></i>Technical Questions</h5>
+        <div id="tech-qs-list"></div>
+      </div>
+    </div>
+
+    <!-- HR Questions -->
+    <div class="col-md-6">
+      <div class="dash-card h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-person-badge text-indigo me-2"></i>HR &amp; Behavioral Questions</h5>
+        <div id="hr-qs-list"></div>
+      </div>
+    </div>
+
+    <!-- Coding Questions -->
+    <div class="col-md-6">
+      <div class="dash-card h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-terminal text-success me-2"></i>Coding Challenges</h5>
+        <div id="coding-qs-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function generateQuestions(e) {
+  e.preventDefault();
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+
+  const role = document.getElementById('role-select').value;
+  const company = document.getElementById('company-select').value;
+  const difficulty = document.getElementById('diff-select').value;
+  const csrfToken = '{{ csrf_token }}';
+
+  const formData = new FormData();
+  formData.append('role', role);
+  formData.append('company_type', company);
+  formData.append('difficulty', difficulty);
+
+  try {
+    const res = await fetch('{% url "interview:ai_practice" %}', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken},
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.questions) {
+      renderQuestions(data.questions);
+      document.getElementById('ai-questions-container').style.display = 'block';
+    }
+  } catch (err) {
+    alert('Failed to generate interview questions. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-cpu me-1"></i> Generate';
+  }
+}
+
+function renderQuestions(qData) {
+  // Technical
+  const techList = document.getElementById('tech-qs-list');
+  techList.innerHTML = (qData.technical || []).map((q, i) => `
+    <div class="p-3 bg-light rounded mb-3 border-start border-3 border-primary">
+      <strong class="d-block text-dark small mb-1">Q${i+1}: ${q.question}</strong>
+      <p class="text-secondary small mb-1"><strong>Expected Answer:</strong> ${q.expected_answer || 'N/A'}</p>
+      <div class="mt-2">
+        <textarea id="ans-tech-${i}" class="form-control form-control-sm mb-2" rows="2" placeholder="Type your answer to get AI feedback..."></textarea>
+        <button class="btn btn-sm btn-outline-primary" onclick="evaluateAnswer('${escapeJs(q.question)}', 'ans-tech-${i}', 'eval-tech-${i}')"><i class="bi bi-robot me-1"></i> Get AI Feedback</button>
+      </div>
+      <div id="eval-tech-${i}" class="mt-2" style="display:none"></div>
+    </div>
+  `).join('');
+
+  // HR
+  const hrList = document.getElementById('hr-qs-list');
+  hrList.innerHTML = (qData.hr || []).map((q, i) => `
+    <div class="p-3 bg-light rounded mb-3 border-start border-3 border-indigo">
+      <strong class="d-block text-dark small mb-1">Q${i+1}: ${q.question}</strong>
+      <div class="mt-2">
+        <textarea id="ans-hr-${i}" class="form-control form-control-sm mb-2" rows="2" placeholder="Practice your response..."></textarea>
+        <button class="btn btn-sm btn-outline-indigo" onclick="evaluateAnswer('${escapeJs(q.question)}', 'ans-hr-${i}', 'eval-hr-${i}')"><i class="bi bi-robot me-1"></i> Get AI Feedback</button>
+      </div>
+      <div id="eval-hr-${i}" class="mt-2" style="display:none"></div>
+    </div>
+  `).join('');
+
+  // Coding
+  const codeList = document.getElementById('coding-qs-list');
+  codeList.innerHTML = (qData.coding || []).map((q, i) => `
+    <div class="p-3 bg-light rounded mb-3 border-start border-3 border-success">
+      <strong class="d-block text-dark small mb-1">Q${i+1}: ${q.question}</strong>
+      <p class="text-secondary small mb-1"><strong>Time Complexity:</strong> ${q.time_complexity || 'O(n)'}</p>
+      <div class="mt-2">
+        <textarea id="ans-code-${i}" class="form-control form-control-sm mb-2" rows="2" placeholder="Explain your code / algorithm approach..."></textarea>
+        <button class="btn btn-sm btn-outline-success" onclick="evaluateAnswer('${escapeJs(q.question)}', 'ans-code-${i}', 'eval-code-${i}')"><i class="bi bi-robot me-1"></i> Get AI Feedback</button>
+      </div>
+      <div id="eval-code-${i}" class="mt-2" style="display:none"></div>
+    </div>
+  `).join('');
+}
+
+function escapeJs(str) {
+  return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+
+async function evaluateAnswer(questionText, inputId, resultId) {
+  const ansInput = document.getElementById(inputId);
+  const resDiv = document.getElementById(resultId);
+  const answer = ansInput ? ansInput.value.trim() : '';
+  if (!answer) {
+    alert('Please type an answer before requesting AI feedback.');
+    return;
+  }
+
+  resDiv.style.display = 'block';
+  resDiv.innerHTML = '<div class="small text-muted"><span class="spinner-border spinner-border-sm me-1"></span> AI Interviewer evaluating response...</div>';
+
+  const role = document.getElementById('role-select').value;
+  const csrfToken = '{{ csrf_token }}';
+  const formData = new FormData();
+  formData.append('question', questionText);
+  formData.append('answer', answer);
+  formData.append('role', role);
+
+  try {
+    const res = await fetch('{% url "interview:evaluate_answer" %}', {
+      method: 'POST',
+      headers: {'X-CSRFToken': csrfToken},
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.score !== undefined) {
+      resDiv.innerHTML = `
+        <div class="p-3 bg-white border rounded shadow-sm border-start border-4 border-success">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-success fs-6">Score: ${data.score}/${data.max_score || 10}</span>
+            <small class="text-muted">Accuracy: ${data.technical_accuracy || 8}/10 | Clarity: ${data.clarity || 7}/10</small>
+          </div>
+          <p class="small text-dark mb-1"><strong>Feedback:</strong> ${data.overall_feedback || 'Good response.'}</p>
+          ${data.what_to_improve && data.what_to_improve.length ? `<p class="small text-danger mb-0"><strong>Improve:</strong> ${data.what_to_improve.join(', ')}</p>` : ''}
+        </div>`;
+    } else {
+      resDiv.innerHTML = '<div class="small text-danger">Could not evaluate answer. Please try again.</div>';
+    }
+  } catch (err) {
+    resDiv.innerHTML = '<div class="small text-danger">Failed to evaluate answer. Please try again.</div>';
+  }
+}
+</script>
+{% endblock %}

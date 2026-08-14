@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Edit Subject — {{ subject.name }}{% endblock %}
+{% block page_title %}Edit Subject{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Edit Subject: <span>{{ subject.name }}</span> &#9999;&#65039;</h1>
+    <p class="dash-subtitle">Update credits, priority, color and exam dates</p>
+  </div>
+  <div>
+    <a href="{% url 'studyplanner:subjects' %}" class="dash-btn-outline">&larr; Back to Subjects</a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="dash-card">
+      <form method="POST" action="{% url 'studyplanner:edit_subject' pk=subject.pk %}">
+        {% csrf_token %}
+        <div class="row g-3 mb-4">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Subject Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" value="{{ subject.name }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Subject Code</label>
+            <input type="text" name="code" class="form-control" value="{{ subject.code }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Credits</label>
+            <input type="number" name="credits" class="form-control" value="{{ subject.credits }}" min="1" max="10">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Priority</label>
+            <select name="priority" class="form-select">
+              <option value="1" {% if subject.priority == 1 %}selected{% endif %}>High</option>
+              <option value="2" {% if subject.priority == 2 %}selected{% endif %}>Medium</option>
+              <option value="3" {% if subject.priority == 3 %}selected{% endif %}>Low</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Difficulty (1-5)</label>
+            <select name="difficulty_level" class="form-select">
+              <option value="1" {% if subject.difficulty_level == 1 %}selected{% endif %}>1 - Very Easy</option>
+              <option value="2" {% if subject.difficulty_level == 2 %}selected{% endif %}>2 - Easy</option>
+              <option value="3" {% if subject.difficulty_level == 3 %}selected{% endif %}>3 - Moderate</option>
+              <option value="4" {% if subject.difficulty_level == 4 %}selected{% endif %}>4 - Hard</option>
+              <option value="5" {% if subject.difficulty_level == 5 %}selected{% endif %}>5 - Very Hard</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Exam Date</label>
+            <input type="date" name="exam_date" class="form-control" value="{{ subject.exam_date|date:'Y-m-d' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Theme Color</label>
+            <input type="color" name="color" class="form-control form-control-color w-100" value="{{ subject.color }}">
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'studyplanner:delete_subject' pk=subject.pk %}" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this subject?');"><i class="bi bi-trash me-1"></i> Delete Subject</a>
+          <div class="d-flex gap-2">
+            <a href="{% url 'studyplanner:subjects' %}" class="dash-btn-outline">Cancel</a>
+            <button type="submit" class="dash-btn-primary"><i class="bi bi-check-circle me-1"></i> Save Changes</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

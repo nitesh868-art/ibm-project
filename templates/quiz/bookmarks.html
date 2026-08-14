@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Bookmarked Questions — PlacementPro{% endblock %}
+{% block page_title %}Saved Bookmarks{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Bookmarked <span>Questions</span> &#128278;</h1>
+    <p class="dash-subtitle">Your personal library of saved practice questions for quick revision</p>
+  </div>
+  <div>
+    <a href="{% url 'quiz:practice' %}" class="dash-btn-outline">&larr; Practice Questions</a>
+  </div>
+</div>
+
+{% if bookmarks %}
+<div class="row g-4">
+  {% for bm in bookmarks %}
+  <div class="col-12">
+    <div class="dash-card">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="badge bg-secondary">{{ bm.question.subject.name|default:"General CS" }}</span>
+        <span class="text-muted small">Saved on: {{ bm.created_at|date:"d M Y" }}</span>
+      </div>
+      <h6 class="fw-bold text-dark mb-3">Q. {{ bm.question.text }}</h6>
+
+      {% if bm.question.code_snippet %}
+      <pre class="bg-dark text-light p-3 rounded mb-3"><code>{{ bm.question.code_snippet }}</code></pre>
+      {% endif %}
+
+      <div class="p-3 bg-light rounded border-start border-3 border-success mb-2">
+        <strong class="text-success d-block mb-1">Correct Answer: Option {{ bm.question.correct_answer|upper }}</strong>
+        <p class="text-secondary small mb-0">{{ bm.question.explanation|default:"No explanation provided." }}</p>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="dash-card text-center py-5">
+  <i class="bi bi-bookmark-dash display-4 text-muted mb-3"></i>
+  <h4 class="fw-bold text-dark">No Saved Bookmarks</h4>
+  <p class="text-muted">Click the "Bookmark" button on practice questions to save them here for later review.</p>
+  <a href="{% url 'quiz:practice' %}" class="dash-btn-primary d-inline-flex">Explore Practice Bank</a>
+</div>
+{% endif %}
+{% endblock %}

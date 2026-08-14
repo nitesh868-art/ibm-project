@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Technical Interview Guide — PlacementPro{% endblock %}
+{% block page_title %}Technical Interview Prep{% endblock %}
+
+{% block content %}
+<div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div>
+    <h1 class="dash-title">Technical <span>Interview Guide</span> &#128187;</h1>
+    <p class="dash-subtitle">Core concepts tested in technical rounds across top tech companies</p>
+  </div>
+  <div>
+    <a href="{% url 'interview:home' %}" class="dash-btn-outline">&larr; Back to Interview Hub</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-3-fill text-primary me-2"></i>Data Structures &amp; Algorithms</h5>
+      <ul class="text-secondary small vstack gap-2 ps-3">
+        <li><strong>Arrays &amp; Strings:</strong> Two-pointer approach, sliding window, prefix sums.</li>
+        <li><strong>LinkedLists:</strong> Reverse linked list, detect cycles (Floyd's Algorithm).</li>
+        <li><strong>Trees &amp; Graphs:</strong> BST operations, BFS, DFS, Dijkstra's algorithm.</li>
+        <li><strong>Dynamic Programming:</strong> 0/1 Knapsack, Longest Common Subsequence.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-database-fill text-indigo me-2"></i>Database Management (DBMS)</h5>
+      <ul class="text-secondary small vstack gap-2 ps-3">
+        <li><strong>SQL Queries:</strong> JOINs (Inner, Left, Right), GROUP BY, HAVING, Subqueries.</li>
+        <li><strong>ACID Properties:</strong> Atomicity, Consistency, Isolation, Durability.</li>
+        <li><strong>Normalization:</strong> 1NF, 2NF, 3NF, BCNF with functional dependencies.</li>
+        <li><strong>Indexing:</strong> B-Trees, Hash indexes, Clustered vs Non-clustered.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-cpu-fill text-success me-2"></i>Operating Systems (OS)</h5>
+      <ul class="text-secondary small vstack gap-2 ps-3">
+        <li><strong>Process vs Thread:</strong> Context switching, IPC mechanisms.</li>
+        <li><strong>Synchronization:</strong> Critical Section, Mutex, Semaphores, Deadlocks.</li>
+        <li><strong>Memory Management:</strong> Paging, Segmentation, Virtual Memory, Page replacement.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="dash-card h-100">
+      <h5 class="fw-bold text-dark mb-3"><i class="bi bi-diagram-2-fill text-warning me-2"></i>Object-Oriented Programming (OOP)</h5>
+      <ul class="text-secondary small vstack gap-2 ps-3">
+        <li><strong>4 Pillars:</strong> Encapsulation, Abstraction, Inheritance, Polymorphism.</li>
+        <li><strong>Overloading vs Overriding:</strong> Compile-time vs Run-time polymorphism.</li>
+        <li><strong>Design Patterns:</strong> Singleton, Factory, Observer basics.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
