@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: placementpro-ai
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn placement_portal.wsgi:application"
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"

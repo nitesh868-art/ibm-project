@@ -21,10 +21,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY & API SETTINGS
 # ---------------------------------------------------------------------------
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-CHANGE-IN-PRODUCTION')
-DEBUG = os.getenv('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver,*').split(',')
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
+
+ALLOWED_HOSTS = [h.strip() for h in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver,*').split(',') if h.strip()]
+RENDER_EXTERNAL_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
+if RENDER_EXTERNAL_HOSTNAME:
+    origin = f'https://{RENDER_EXTERNAL_HOSTNAME}'
+    if origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
+
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '').strip()
-OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', 'nvidia/nemotron-3-super-120b-a12b:free').strip()
+OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free').strip()
 
 
 # ---------------------------------------------------------------------------
@@ -112,8 +123,19 @@ WSGI_APPLICATION = 'placement_portal.wsgi.application'
 # ---------------------------------------------------------------------------
 # DATABASE
 # ---------------------------------------------------------------------------
-# SQLite for development. Switch to PostgreSQL in production by setting env vars.
-if os.getenv('DB_NAME'):
+# Supports DATABASE_URL (Render managed PostgreSQL), custom DB env vars, or SQLite (fallback)
+import dj_database_url
+
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+elif os.getenv('DB_NAME'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -236,9 +258,14 @@ MESSAGE_TAGS = {
 # ---------------------------------------------------------------------------
 # SECURITY (Production hardening — only when DEBUG=False)
 # ---------------------------------------------------------------------------
+# Trust the reverse proxy header set by Render for HTTPS termination
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+

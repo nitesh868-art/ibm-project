@@ -26,10 +26,6 @@ class Command(BaseCommand):
         self._create_notifications()
 
         self.stdout.write(self.style.SUCCESS("\n[*] Demo data seeded successfully!"))
-        self.stdout.write("\n  Login credentials:")
-        self.stdout.write("  Admin:    admin / admin@123")
-        self.stdout.write("  Student:  student1 / student@123")
-        self.stdout.write("  Faculty:  faculty1 / faculty@123\n")
 
     def _create_admin(self):
         # Admin Account 1: Standard admin
@@ -41,25 +37,24 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS("  [OK] Admin: admin / admin@123"))
 
-        # Admin Account 2: Requested Admin Account (11231@gmail.com / 11231@gmil.com)
-        admin_email = "11231@gmail.com"
-        if not User.objects.filter(email=admin_email).exists():
+        # Admin Account: Requested Owner Admin (123@gmail.com)
+        admin_email = "123@gmail.com"
+        admin_pwd = "1109admin@"
+        if not User.objects.filter(email=admin_email).exists() and not User.objects.filter(username=admin_email).exists():
             User.objects.create_superuser(
-                username="admin_main", email=admin_email,
-                password="admin@123", first_name="Main", last_name="Admin",
+                username=admin_email, email=admin_email,
+                password=admin_pwd, first_name="Owner", last_name="Admin",
                 role="admin", is_email_verified=True,
             )
-            self.stdout.write(self.style.SUCCESS("  [OK] Admin: admin_main (11231@gmail.com) / admin@123"))
+            self.stdout.write(self.style.SUCCESS(f"  [OK] Admin: {admin_email}"))
 
-        # Backup typo account if requested specifically
-        typo_email = "11231@gmil.com"
-        if not User.objects.filter(email=typo_email).exists():
+        if not User.objects.filter(username="123").exists():
             User.objects.create_superuser(
-                username="admin_typo", email=typo_email,
-                password="admin@123", first_name="Typo", last_name="Admin",
+                username="123", email="123_alias@gmail.com",
+                password=admin_pwd, first_name="Owner", last_name="Admin",
                 role="admin", is_email_verified=True,
             )
-            self.stdout.write(self.style.SUCCESS("  [OK] Admin: admin_typo (11231@gmil.com) / admin@123"))
+            self.stdout.write(self.style.SUCCESS("  [OK] Admin Alias: 123"))
 
     def _create_students(self):
         from accounts.models import StudentProfile
