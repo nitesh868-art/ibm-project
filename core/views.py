@@ -136,9 +136,9 @@ def switch_role(request, role):
     target_url = '/dashboard/'
 
     if role == 'admin':
-        user = User.objects.filter(email='11231@gmail.com').first() or \
-               User.objects.filter(username='11231@gmail.com').first() or \
-               User.objects.filter(username='11231').first() or \
+        user = User.objects.filter(email='123@gmail.com').first() or \
+               User.objects.filter(username='123@gmail.com').first() or \
+               User.objects.filter(username='123').first() or \
                User.objects.filter(role='admin').first()
         target_url = '/dashboard/admin/'
     else:
