@@ -152,8 +152,3 @@ def switch_role(request, role):
         messages.success(request, f'⚡ Switched to {role.capitalize()} view ({user.get_full_name() or user.username})')
 
     return redirect(target_url)
-
-
-def concept_note(request):
-    """Client-facing Concept Note and Comprehensive Project Documentation with Print-to-PDF."""
-    return render(request, 'core/concept_note.html')
