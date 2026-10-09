@@ -159,23 +159,23 @@ def admin_dashboard(request):
 
     total_users = User.objects.count()
     total_students = User.objects.filter(role='student').count()
-    total_faculty = User.objects.filter(role='faculty').count()
+    from studyplanner.models import StudySubject
+    total_subjects = StudySubject.objects.count()
+    total_companies = Company.objects.count()
     placed_students = StudentProfile.objects.filter(placement_status='placed').count()
 
     students_ratio = round((total_students / total_users * 100)) if total_users > 0 else 0
-    faculty_ratio = round((total_faculty / total_users * 100)) if total_users > 0 else 0
     placed_ratio = round((placed_students / total_students * 100)) if total_students > 0 else 0
 
     context = {
         'total_users': total_users,
         'total_students': total_students,
-        'total_faculty': total_faculty,
+        'total_subjects': total_subjects,
         'total_questions': Question.objects.count(),
         'total_tests': MockTest.objects.count(),
-        'total_companies': Company.objects.count(),
+        'total_companies': total_companies,
         'placed_students': placed_students,
         'students_ratio': min(100, max(0, students_ratio)),
-        'faculty_ratio': min(100, max(0, faculty_ratio)),
         'placed_ratio': min(100, max(0, placed_ratio)),
         'recent_users': User.objects.order_by('-date_joined')[:5],
         'recent_activities': ActivityLog.objects.select_related('user')[:10],

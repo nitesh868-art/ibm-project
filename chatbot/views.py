@@ -27,6 +27,7 @@ def ask_ai(request):
         mode = 'tutor'
         notes_content = ''
         message = ''
+        data = {}  # Always initialised so lines below can safely reference it
 
         if request.content_type == 'application/json':
             try:
@@ -40,6 +41,20 @@ def ask_ai(request):
             message = request.POST.get('message', '').strip()
             mode = request.POST.get('mode', 'tutor')
             notes_content = request.POST.get('notes_content', '')
+
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+            fname = uploaded_file.name.lower()
+            try:
+                if fname.endswith('.txt'):
+                    notes_content = uploaded_file.read().decode('utf-8', errors='ignore')
+                elif fname.endswith('.pdf'):
+                    import pypdf
+                    reader = pypdf.PdfReader(uploaded_file)
+                    extracted = [p.extract_text() or '' for p in reader.pages[:10]]
+                    notes_content = '\n'.join(extracted)
+            except Exception as f_err:
+                pass
 
         if not message and not notes_content:
             return JsonResponse({'success': False, 'response': 'Please enter a question or upload notes.'})
@@ -73,7 +88,13 @@ def ask_ai(request):
         )
 
 
-        # Save to session history
+        if not result.get('success'):
+            from core.ai_service import get_user_friendly_ai_error
+            err_detail = result.get('error') or ''
+            user_msg = result.get('response') or get_user_friendly_ai_error(err_detail)
+            return JsonResponse({'success': False, 'response': user_msg, 'error': err_detail})
+
+        # Save to session history only on successful response
         history.append({'role': 'user', 'content': message or '[Uploaded Notes Analysis]'})
         history.append({'role': 'assistant', 'content': result.get('response', '')})
         request.session['chat_history'] = history[-20:]
@@ -81,12 +102,7 @@ def ask_ai(request):
 
         # Log activity
         from core.models import log_activity
-        log_activity(request.user, f"AI Tutor Chat ({mode})", module='Chatbot', request=request)
-
-        if not result.get('success'):
-            from core.ai_service import get_user_friendly_ai_error
-            user_msg = get_user_friendly_ai_error(result.get('error'))
-            return JsonResponse({'success': False, 'response': user_msg})
+        log_activity(request.user, f"AI Placement Chat ({mode})", module='Chatbot', request=request)
 
         return JsonResponse(result)
 

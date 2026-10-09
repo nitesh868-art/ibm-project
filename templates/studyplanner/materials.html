@@ -71,26 +71,25 @@
       </div>
       <form method="post" action="{% url 'studyplanner:upload_notes' %}" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="modal-body p-4">
           <div class="mb-3">
-            <label class="form-label fw-bold small">Notes Title *</label>
-            <input type="text" name="title" class="form-control" placeholder="e.g. DBMS Normalization 3NF Notes" required>
+            <label class="form-label fw-bold small" for="notesTitle">Notes Title *</label>
+            <input type="text" name="title" id="notesTitle" class="form-control" placeholder="e.g. DBMS Normalization 3NF Notes" required>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-bold small">Material Type</label>
-            <select name="material_type" class="form-select">
+            <label class="form-label fw-bold small" for="materialType">Material Type</label>
+            <select name="material_type" id="materialType" class="form-select">
               <option value="notes">Text Notes / Summary</option>
               <option value="pdf">PDF Document</option>
               <option value="doc">Word Document (.docx)</option>
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label fw-bold small">Upload File (PDF, DOCX, TXT - Max 10MB)</label>
-            <input type="file" name="file" class="form-control">
+            <label class="form-label fw-bold small" for="uploadFile">Upload File (PDF, DOCX, TXT - Max 10MB)</label>
+            <input type="file" name="file" id="uploadFile" class="form-control">
           </div>
           <div class="mb-3">
-            <label class="form-label fw-bold small">Description / Notes Text</label>
-            <textarea name="description" class="form-control" rows="3" placeholder="Paste notes text directly or add a description..."></textarea>
+            <label class="form-label fw-bold small" for="notesDescription">Description / Notes Text</label>
+            <textarea name="description" id="notesDescription" class="form-control" rows="3" placeholder="Paste notes text directly or add a description..."></textarea>
           </div>
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" name="explain_now" value="1" id="explainNow" checked>

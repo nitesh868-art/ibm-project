@@ -27,9 +27,9 @@ logger = logging.getLogger('django')
 # Provider configuration
 # ---------------------------------------------------------------------------
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_TIMEOUT = 12          # seconds per request
-MAX_TOKENS_NORMAL = 500          # reasonably short responses to save free quota & speed up fallbacks
-MAX_TOKENS_JSON = 800            # reasonably concise JSON responses to ensure fast completion
+OPENROUTER_TIMEOUT = 16          # seconds per request (fast failover)
+MAX_TOKENS_NORMAL = 1200         # sufficient tokens for complete study plans & explanations
+MAX_TOKENS_JSON = 1000           # concise JSON responses
 TEMPERATURE = 0.4
 
 
@@ -44,7 +44,7 @@ def _get_model() -> str:
     return (
         getattr(settings, 'OPENROUTER_MODEL', '')
         or os.getenv('OPENROUTER_MODEL', '')
-        or 'nvidia/nemotron-3-super-120b-a12b:free'
+        or 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free'
     )
 
 
@@ -56,7 +56,7 @@ def is_ai_available() -> bool:
 def get_user_friendly_ai_error(error_str: str = '') -> str:
     """Categorise raw technical errors into safe, clean user-facing messages."""
     if not error_str:
-        return "AI service is temporarily unavailable. Please try again."
+        return "AI service is temporarily busy. Please try again."
 
     err = str(error_str).lower()
 
@@ -67,36 +67,34 @@ def get_user_friendly_ai_error(error_str: str = '') -> str:
     if '429' in err or 'rate' in err or 'quota' in err or 'resource_exhausted' in err:
         return "AI usage limit reached. Please try again in a few moments."
     if '500' in err or '502' in err or '503' in err or 'unavailable' in err:
-        return "AI service is temporarily unavailable. Please try again."
+        return "AI service is temporarily busy. Please try again."
     if 'timeout' in err or 'timed out' in err:
         return "AI request timed out. Please try again."
     if 'connection' in err or 'network' in err:
         return "Could not reach AI service. Check your internet connection."
 
-    return "AI service is temporarily unavailable. Please try again."
+    return "AI service is temporarily busy. Please try again."
 
 
 # ---------------------------------------------------------------------------
 # Core transport — Multi-model fallback chain for OpenRouter
 # ---------------------------------------------------------------------------
 FALLBACK_MODELS = [
+    'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
     'nvidia/nemotron-3-super-120b-a12b:free',
-    'meta-llama/llama-3.3-70b-instruct:free',
-    'deepseek/deepseek-r1:free',
-    'qwen/qwen-2.5-coder-32b-instruct:free',
-    'openrouter/auto',
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
+    'cohere/north-mini-code:free',
 ]
 
 
-def _generate(prompt: str, max_tokens: int = MAX_TOKENS_NORMAL,
+def _generate(prompt: str = "", max_tokens: int = MAX_TOKENS_NORMAL,
               system_prompt: str = "You are PlacementPro AI, a helpful academic and career tutor for Indian B.Tech students.",
-              temperature: float = TEMPERATURE) -> str | None:
+              temperature: float = TEMPERATURE,
+              messages: list | None = None) -> str | None:
     """
     Send a chat completion request to OpenRouter with automatic multi-model fallback.
-    Primary model: nvidia/nemotron-3-super-120b-a12b:free
-    Falls back to other free OpenRouter models if primary fails with 429, 5xx, timeout, or empty response.
-    Returns the response text string, or None on failure.
-    The API key is NEVER logged or exposed.
+    Primary model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free
+    Falls back to other active free OpenRouter models if primary fails.
     """
     api_key = _get_api_key()
     if not api_key:
@@ -120,12 +118,14 @@ def _generate(prompt: str, max_tokens: int = MAX_TOKENS_NORMAL,
     last_error = None
 
     for model in models_to_try:
+        msg_payload = messages if messages is not None else [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": prompt},
+        ]
+
         payload = {
             "model": model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt},
-            ],
+            "messages": msg_payload,
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
@@ -164,7 +164,7 @@ def _generate(prompt: str, max_tokens: int = MAX_TOKENS_NORMAL,
             logger.warning("[OpenRouter] Model %s returned unexpected HTTP %d, trying fallback...", model, status)
             continue
 
-        # Parse response
+        # Parse response safely
         try:
             data = resp.json()
         except (ValueError, TypeError) as exc:
@@ -173,14 +173,23 @@ def _generate(prompt: str, max_tokens: int = MAX_TOKENS_NORMAL,
             continue
 
         try:
-            text = data['choices'][0]['message']['content'].strip()
+            choices = data.get('choices') or []
+            if not choices:
+                last_error = f"empty choices ({model})"
+                continue
+            msg = choices[0].get('message') or {}
+            text = msg.get('content')
+            if not text and msg.get('reasoning'):
+                text = msg.get('reasoning')
+            if text:
+                text = str(text).strip()
             if text:
                 logger.info("[OpenRouter] Successfully generated response using model: %s", model)
                 return text
             logger.warning("[OpenRouter] Model %s returned empty text, trying fallback...", model)
             last_error = f"empty text ({model})"
-        except (KeyError, IndexError, TypeError) as exc:
-            logger.warning("[OpenRouter] Model %s returned malformed response structure, trying fallback...", model)
+        except (KeyError, IndexError, TypeError, AttributeError) as exc:
+            logger.warning("[OpenRouter] Model %s returned malformed response structure (%s), trying fallback...", model, exc)
             last_error = f"malformed response ({model})"
 
     logger.error("[OpenRouter] All fallback models failed. Last error: %s", last_error)
@@ -478,41 +487,207 @@ def ai_chat(message: str, conversation_history=None, student_profile=None,
             "edge cases, time/space complexity for coding questions."
         )
 
-    # ── Conversation history (last 6 turns) ───────────────────────────────
-    history_text = ""
+    # ── Conversation history (multi-turn context) ──────────────────────────
+    history_messages = []
     if conversation_history:
-        for item in (conversation_history[-6:]):
+        for item in conversation_history[-8:]:
             role = item.get("role", "user")
-            content = item.get("content", "")[:400]  # truncate long entries
-            history_text += f"{role.upper()}: {content}\n"
+            content = str(item.get("content", "")).strip()
+            if not content:
+                continue
+            role_norm = "assistant" if role in ("assistant", "ai") else "user"
+            history_messages.append({"role": role_norm, "content": content[:1200]})
 
     system_prompt = (
-        "You are PlacementPro AI — an intelligent Academic & Career Tutor "
-        "for Indian B.Tech students. Be helpful, concise and accurate. "
-        "Do not hallucinate. Do not invent content from uploaded notes."
+        f"You are PlacementPro AI — an intelligent AI Placement Assistant and Academic Tutor for Indian B.Tech students.\n"
+        f"STUDENT PROFILE:\n"
+        f"- Year: Year {year} B.Tech | Semester: {semester} | Branch: {branch}\n"
+        f"- Skills: {skills}\n"
+        f"- Weak Areas: {weak_areas}\n\n"
+        f"{level_instruction}\n"
+        f"{mode_instruction}\n\n"
+        f"Guidelines:\n"
+        f"- Answer student queries directly, professionally, and accurately.\n"
+        f"- Maintain conversation context and answer follow-up questions based on previous messages.\n"
+        f"- Format code, technical concepts, study plans, or practice questions with neat markdown (headings, bold, lists).\n"
+        f"- If asked for a study plan or schedule, produce an actionable day-by-day plan.\n"
+        f"- If asked for aptitude, provide questions with answers and clear step-by-step explanations.\n"
+        f"- Do NOT repeat the initial welcome message when answering questions."
     )
 
-    prompt = f"""STUDENT PROFILE:
-- Year: Year {year} B.Tech | Semester: {semester} | Branch: {branch}
-- Skills: {skills}
-- Weak Areas: {weak_areas}
+    full_messages = [{"role": "system", "content": system_prompt}]
+    full_messages.extend(history_messages)
+    full_messages.append({"role": "user", "content": message})
 
-{level_instruction}
-{mode_instruction}
-
-CONVERSATION HISTORY:
-{history_text}
-STUDENT: {message}
-ANSWER:"""
-
-    text = _generate(prompt, max_tokens=MAX_TOKENS_NORMAL, system_prompt=system_prompt)
+    text = _generate(prompt=message, max_tokens=MAX_TOKENS_NORMAL, system_prompt=system_prompt, messages=full_messages)
     if text:
         return {"success": True, "response": text}
 
     return {
         "success": False,
         "response": "AI service is temporarily unavailable. Please try again in a moment.",
+        "error": "All fallback models failed or timed out."
     }
+
+
+def _intelligent_local_tutor_response(query: str, mode: str = "tutor", student_profile: dict = None) -> str:
+    """
+    High-quality offline knowledge base for placement, DSA, aptitude, and academic queries.
+    Activated seamlessly whenever external LLM API endpoints undergo high latency or failover.
+    """
+    q = (query or "").lower().strip()
+    prof = student_profile or {}
+    branch = prof.get('branch', 'CSE')
+
+    # 1. Binary Search
+    if "binary search" in q:
+        return (
+            "### ⚡ Binary Search — Comprehensive Breakdown\n\n"
+            "**Binary Search** is an optimal searching algorithm that locates an element in a **sorted array** by repeatedly halving the search space.\n\n"
+            "#### ⏱️ Complexity Analysis\n"
+            "- **Time Complexity:** Best: $O(1)$ | Average & Worst: $O(\\log N)$\n"
+            "- **Space Complexity:** Iterative: $O(1)$ | Recursive: $O(\\log N)$\n\n"
+            "#### 💻 Standard Implementation (C++ / Python Logic)\n"
+            "```python\n"
+            "def binary_search(arr, target):\n"
+            "    left, right = 0, len(arr) - 1\n"
+            "    while left <= right:\n"
+            "        mid = left + (right - left) // 2  # Prevents integer overflow\n"
+            "        if arr[mid] == target:\n"
+            "            return mid\n"
+            "        elif arr[mid] < target:\n"
+            "            left = mid + 1\n"
+            "        else:\n"
+            "            right = mid - 1\n"
+            "    return -1\n"
+            "```\n\n"
+            "💡 **Interview Pro Tip:** Always compute `mid = left + (right - left) // 2` instead of `(left + right) // 2` to avoid integer overflow in languages like Java and C++!"
+        )
+
+    # 2. Resume / ATS Score
+    if "resume" in q or "ats" in q:
+        return (
+            "### 📄 ATS Resume Optimization Masterclass\n\n"
+            "Applicant Tracking Systems (ATS) scan for structural readability, relevant technical keywords, and quantified achievements.\n\n"
+            "#### 🎯 Key Strategies for 85+ ATS Score:\n"
+            "1. **Clean Single-Column Layout:** Avoid multi-column tables, text boxes, and complex graphics that ATS parsers misread.\n"
+            "2. **The Google XYZ Formula for Bullet Points:**\n"
+            "   > *\"Accomplished [X], as measured by [Y], by doing [Z]\"*\n"
+            "   - *Example:* \"Reduced database query latency by **35%** by redesigning PostgreSQL indexes and implementing Redis caching.\"\n"
+            "3. **Targeted Tech Stack Keywords:** Include languages and tools directly mentioned in job descriptions (e.g., *Python, Django, REST APIs, Docker, Git, PostgreSQL*).\n"
+            "4. **Essential Sections:** Contact Details (GitHub, LinkedIn) → Technical Skills → Experience / Internships → Notable Projects → Education → Certifications.\n\n"
+            "💡 **Action Item:** Head over to our **Resume Builder** tool to test your resume against ATS criteria right now!"
+        )
+
+    # 3. Study Plan / Schedule
+    if "study plan" in q or "plan" in q or "schedule" in q or "7-day" in q or "roadmap" in q:
+        return (
+            "### 📅 7-Day Intensive Placement Sprint Roadmap\n\n"
+            "Here is your structured day-by-day placement preparation schedule:\n\n"
+            "| Day | Focus Area | Core Topics & Tasks | Daily Target |\n"
+            "| :--- | :--- | :--- | :--- |\n"
+            "| **Day 1** | **DSA Fundamentals** | Arrays, Two-Pointer technique, Sliding Window | Solve 4 LeetCode Easy/Medium |\n"
+            "| **Day 2** | **Core Data Structures** | Linked Lists, Stacks & Queues, Monotonic Stack | 4 Problems + Implementation |\n"
+            "| **Day 3** | **Trees & BST** | Inorder/Preorder/Postorder, BFS/DFS traversals | 3 Tree Problems |\n"
+            "| **Day 4** | **DBMS & SQL** | ACID properties, Normalization (1NF-BCNF), Joins | 5 SQL queries on LeetCode/HackerRank |\n"
+            "| **Day 5** | **Operating Systems & OOP**| Process vs Thread, Deadlocks, Paging, 4 OOP Pillars | Quick Revision notes |\n"
+            "| **Day 6** | **Aptitude & Reasoning**| Percentages, Profit/Loss, Time & Work, Blood Relations | 25 Practice Questions |\n"
+            "| **Day 7** | **Mock Interview & HR** | STAR format answers, Project walkthrough, 1 Mock Test | Review weak areas |\n\n"
+            "🔥 **Rule of Thumb:** Follow the 50/10 Pomodoro rule (50 mins focused study + 10 mins break) to prevent burnout!"
+        )
+
+    # 4. Interview Tips / STAR Method
+    if "interview" in q or "star" in q or "hr" in q or "tell me about yourself" in q:
+        return (
+            "### 🎯 Master the Interview: The STAR Method & HR Success\n\n"
+            "When answering behavioral and situational questions (e.g. *\"Tell me about a time you faced a difficult technical bug\"*), use the **STAR Framework**:\n\n"
+            "- **S — Situation:** Set the context (project, team, problem).\n"
+            "- **T — Task:** Describe your specific responsibility or objective.\n"
+            "- **A — Action:** Detail the concrete steps **you** took to solve it.\n"
+            "- **R — Result:** Highlight the measurable outcome and what you learned.\n\n"
+            "#### 🗣️ \"Tell Me About Yourself\" in 90 Seconds:\n"
+            "1. **Present (30s):** Current year, B.Tech branch, core passions (e.g., Full Stack / Backend / AI).\n"
+            "2. **Past (30s):** Key project built, technical internships, and problems you solved.\n"
+            "3. **Future (30s):** Why this role excites you and how your skills align with their team.\n\n"
+            "💡 **Pro Tip:** Never speak negatively about past teams or technologies. Frame challenges as learning curves."
+        )
+
+    # 5. Companies / Placement Patterns
+    if "company" in q or "companies" in q or "tcs" in q or "infosys" in q or "amazon" in q or "wipro" in q:
+        return (
+            "### 🏢 Top Company Placement Patterns & Rounds Breakdown\n\n"
+            "Tech hiring in India generally falls into two major tracks:\n\n"
+            "#### 1. Product Companies (Amazon, Microsoft, FlipKart, Startups)\n"
+            "- **Round 1 (Online Assessment):** 2–3 DSA questions (Medium/Hard) + MCQs on CS Fundamentals.\n"
+            "- **Round 2 & 3 (Technical Interviews):** Live coding (Trees, Graphs, DP), Data Structure design, System Design basics.\n"
+            "- **Round 4 (Bar Raiser / Culture Fit):** Behavioral questions, past projects deep dive, leadership principles.\n\n"
+            "#### 2. Mass Recruiters / Tier-2 IT (TCS, Infosys, Cognizant, Wipro, Accenture)\n"
+            "- **Round 1:** Cognitive Aptitude (Quants, Logical, English) + Pseudo-code / Automata Fix.\n"
+            "- **Round 2:** Technical Interview covering OOPs, SQL queries, Final Year Project, basic DSA (Arrays, Strings).\n"
+            "- **Round 3:** HR & Communication validation.\n\n"
+            "📌 **Action Tip:** Check the **Companies** section in PlacementPro for company-specific CTC and syllabus details!"
+        )
+
+    # 6. Aptitude
+    if "aptitude" in q or "quant" in q or "reasoning" in q:
+        return (
+            "### 🧠 Aptitude Practice: Top Placement Questions with Solutions\n\n"
+            "#### Question 1 (Time & Work)\n"
+            "**Q:** *A can finish a task in 12 days, and B can finish it in 18 days. If they work together, in how many days will the task be completed?*\n"
+            "- **Solution:** A's 1-day work = $1/12$. B's 1-day work = $1/18$.\n"
+            "- Combined 1-day work = $1/12 + 1/18 = (3 + 2)/36 = 5/36$.\n"
+            "- **Answer:** Total days = $36/5 =$ **7.2 days**.\n\n"
+            "#### Question 2 (Percentages & Profit/Loss)\n"
+            "**Q:** *A product is marked 25% above cost price and sold at a 10% discount. Find the profit percentage.*\n"
+            "- **Solution:** Let CP = ₹100. Marked Price (MP) = ₹125.\n"
+            "- Discount = $10\\% \\text{ of } 125 = ₹12.5$.\n"
+            "- Selling Price (SP) = $125 - 12.5 = ₹112.5$.\n"
+            "- **Answer:** Profit % = $\\frac{112.5 - 100}{100} \\times 100 =$ **12.5%**.\n\n"
+            "💡 Practice 15 aptitude problems every morning to boost your speed in online screening tests!"
+        )
+
+    # 7. DBMS & SQL
+    if "dbms" in q or "acid" in q or "sql" in q or "database" in q:
+        return (
+            "### 🗄️ DBMS: ACID Properties & Placement Fundamentals\n\n"
+            "**ACID** ensures reliable database transactions in enterprise systems:\n\n"
+            "- **A — Atomicity:** *\"All or nothing\"*. Either all operations of a transaction execute successfully, or none do (Rollback on failure).\n"
+            "- **C — Consistency:** Database transitions from one valid state to another, satisfying all integrity constraints.\n"
+            "- **I — Isolation:** Concurrent transactions execute without interfering with one another (managed via isolation levels: Read Committed, Serializable).\n"
+            "- **D — Durability:** Once committed, transaction changes survive system crashes or power failures (logged in Write-Ahead Logging).\n\n"
+            "#### Common SQL Interview Query:\n"
+            "**Find the 2nd Highest Salary:**\n"
+            "```sql\n"
+            "SELECT MAX(salary) FROM Employee \n"
+            "WHERE salary < (SELECT MAX(salary) FROM Employee);\n"
+            "```"
+        )
+
+    # 8. Operating Systems
+    if "operating system" in q or "os" in q or "deadlock" in q or "process" in q or "thread" in q:
+        return (
+            "### ⚙️ Operating Systems: Core Interview Concepts\n\n"
+            "#### 1. Process vs Thread\n"
+            "- **Process:** An executing program with its own dedicated memory space (Heap, Stack, Data).\n"
+            "- **Thread:** The smallest execution unit within a process; shares memory with peer threads, enabling lightweight context switching.\n\n"
+            "#### 2. The 4 Necessary Conditions for Deadlock (Coffman Conditions):\n"
+            "1. **Mutual Exclusion:** At least one non-shareable resource.\n"
+            "2. **Hold and Wait:** Process holding resources requests additional ones.\n"
+            "3. **No Preemption:** Resources cannot be forcibly taken away.\n"
+            "4. **Circular Wait:** A closed chain of processes each waiting for a resource held by the next."
+        )
+
+    # Generic adaptive response
+    return (
+        f"### 💡 AI Placement Guidance ({branch} B.Tech Track)\n\n"
+        f"Regarding your query on **\"{query}\"**:\n\n"
+        "1. **Core Concept:** Break this down into first principles. Focus on foundational understanding before jumping into complex edge cases.\n"
+        "2. **Placement Application:** In technical rounds, interviewers value your ability to explain time/space complexity, trade-offs, and practical implementations.\n"
+        "3. **Recommended Next Steps:**\n"
+        "   - Review the relevant module in the **PlacementPro Study Planner**.\n"
+        "   - Take a quick timed practice test in the **Mock Tests** section.\n"
+        "   - Feel free to ask me to write code, solve problems, or explain this topic in more detail!"
+    )
 
 
 # ===========================================================================
@@ -542,10 +717,10 @@ Return ONLY valid JSON:
     {{"question": "Explain ... with example", "hints": "1. Definition 2. Working 3. Example"}}
   ],
   "mcqs": [
-    {"question": "...", "options": ["A. ..", "B. ..", "C. ..", "D. .."], "correct": "A"}
+    {{"question": "...", "options": ["A. ..", "B. ..", "C. ..", "D. .."], "correct": "A"}}
   ],
   "flashcards": [
-    {"front": "Key Term / Question", "back": "Concise explanation / answer"}
+    {{"front": "Key Term / Question", "back": "Concise explanation / answer"}}
   ],
   "important_topics": ["Topic 1", "Topic 2", "Topic 3"]
 }}"""
@@ -697,23 +872,39 @@ Output ONLY valid JSON:
     return {"success": False, "analysis": None}
 
 
-# ===========================================================================
-# CENTRAL CONVENIENCE WRAPPER
-# ===========================================================================
-def generate_ai_response(prompt: str, context: dict = None) -> dict:
+class AIResponse(str):
+    """String subclass that also supports dict access {'success': bool, 'response': str}."""
+    def __new__(cls, text: str, success: bool = True):
+        obj = str.__new__(cls, text or "")
+        obj.success = success
+        obj._dict = {"success": success, "response": text or ""}
+        return obj
+
+    def get(self, key, default=None):
+        return self._dict.get(key, default)
+
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            return self._dict[item]
+        return super().__getitem__(item)
+
+
+def generate_ai_response(prompt: str, context: dict = None, system_prompt: str = None) -> AIResponse:
     """
-    Simple central wrapper used by any view that wants a plain AI response.
-    context dict is optional; if provided it is prepended to the prompt.
+    Central convenience wrapper for calling AI.
+    Returns an AIResponse which functions both as a string and as a dict.
     """
     full_prompt = prompt
     if context:
         ctx_lines = "\n".join(f"{k}: {v}" for k, v in context.items())
         full_prompt = f"Context:\n{ctx_lines}\n\nQuestion:\n{prompt}"
 
-    text = _generate(full_prompt)
+    sys_p = system_prompt or "You are PlacementPro AI, a helpful academic tutor and placement coach."
+    text = _generate(full_prompt, system_prompt=sys_p)
     if text:
-        return {"success": True, "response": text}
-    return {"success": False, "response": get_user_friendly_ai_error('')}
+        return AIResponse(text, success=True)
+    err = get_user_friendly_ai_error('')
+    return AIResponse(err, success=False)
 
 
 # ===========================================================================

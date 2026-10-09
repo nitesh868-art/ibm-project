@@ -77,6 +77,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'accounts.backends.MultiIdentifierBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 ROOT_URLCONF = 'placement_portal.urls'
 
 # ---------------------------------------------------------------------------

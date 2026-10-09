@@ -117,17 +117,12 @@
         <a href="{% url 'chatbot:home' %}" class="sidebar-link {% if request.resolver_match.namespace == 'chatbot' %}active{% endif %}">
           <i class="bi bi-robot"></i> AI Assistant
         </a>
-      </div>
-
-      <!-- Faculty only -->
-      {% if user.is_faculty %}
-      <div class="sidebar-section">
-        <div class="sidebar-section-title">Faculty</div>
-        <a href="{% url 'dashboard:faculty' %}" class="sidebar-link">
-          <i class="bi bi-person-badge-fill"></i> Faculty Dashboard
+        <a href="{% url 'core:concept_note' %}" class="sidebar-link" target="_blank" title="View & Print Project Concept Note">
+          <i class="bi bi-file-earmark-pdf-fill text-danger"></i> Concept Note (PDF)
         </a>
       </div>
-      {% endif %}
+
+
 
       <!-- Admin only -->
       {% if user.is_admin_user %}
@@ -177,6 +172,31 @@
         </div>
       </div>
       <div class="navbar-right">
+        <!-- Role Badge & Admin Controls -->
+        {% if user.is_admin_user %}
+        <div class="dropdown me-1">
+          <button class="btn btn-sm btn-outline-danger dropdown-toggle d-flex align-items-center gap-1 rounded-pill px-3 py-1 fw-600" data-bs-toggle="dropdown" style="font-size:12.5px">
+            <i class="bi bi-shield-check"></i>
+            <span>Admin</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow" style="border-radius:12px;font-size:13px;min-width:210px">
+            <li><h6 class="dropdown-header text-uppercase text-muted" style="font-size:10px">Owner Controls</h6></li>
+            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'dashboard:admin' %}"><i class="bi bi-shield-lock-fill text-danger"></i><strong>Admin Command Center</strong></a></li>
+            <li><a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'dashboard:home' %}"><i class="bi bi-mortarboard-fill text-success"></i><strong>Student View</strong></a></li>
+          </ul>
+        </div>
+        {% else %}
+        <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2 me-1" style="font-size:12px; font-weight:600;">
+          <i class="bi bi-mortarboard-fill me-1"></i> Student
+        </span>
+        {% endif %}
+
+        <!-- AI Assistant Pill -->
+        <a href="{% url 'chatbot:home' %}" class="btn btn-sm btn-primary d-flex align-items-center gap-1 rounded-pill px-3 py-1 shadow-sm fw-700 me-1" style="font-size:12.5px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none" title="Launch AI Placement Copilot">
+          <i class="bi bi-stars"></i>
+          <span>AI Copilot</span>
+        </a>
+
         <!-- Theme Toggle -->
         <button class="theme-toggle" id="themeToggle" title="Toggle Dark Mode">
           <i class="bi bi-moon-stars-fill"></i>
@@ -193,11 +213,6 @@
         <!-- Home Button -->
         <a href="{% url 'dashboard:home' %}" class="navbar-icon-btn" title="Go to Home Dashboard">
           <i class="bi bi-house-door-fill"></i>
-        </a>
-
-        <!-- AI Assistant -->
-        <a href="{% url 'chatbot:home' %}" class="navbar-icon-btn" title="AI Assistant">
-          <i class="bi bi-robot"></i>
         </a>
 
         <!-- User Dropdown -->

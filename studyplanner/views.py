@@ -100,14 +100,22 @@ def delete_subject(request, pk):
 
 @login_required
 def topic_list(request, pk):
-    """List topics for a subject."""
-    subject = get_object_or_404(StudySubject, pk=pk, student=request.user)
+    """List topics for a subject with syllabus details and AI doubt solver."""
+    if request.user.role == 'admin' or request.user.is_superuser or request.user.is_staff:
+        subject = get_object_or_404(StudySubject, pk=pk)
+    else:
+        subject = get_object_or_404(StudySubject, pk=pk, student=request.user)
+
     topics = Topic.objects.filter(subject=subject)
+    last_q = request.session.pop('last_syllabus_q', None)
+    last_a = request.session.pop('last_syllabus_a', None)
 
     return render(request, 'studyplanner/topics.html', {
         'subject': subject,
         'topics': topics,
         'status_choices': Topic.STATUS_CHOICES,
+        'last_syllabus_q': last_q,
+        'last_syllabus_a': last_a,
     })
 
 
@@ -465,5 +473,103 @@ def explain_notes(request, pk):
         'doc_answer': doc_answer,
         'user_error': user_error,
     })
+
+
+@login_required
+def upload_syllabus(request, pk):
+    """Upload syllabus file (PDF, DOCX, TXT) or raw text for a subject."""
+    if request.user.role == 'admin' or request.user.is_superuser or request.user.is_staff:
+        subject = get_object_or_404(StudySubject, pk=pk)
+    else:
+        subject = get_object_or_404(StudySubject, pk=pk, student=request.user)
+
+    if request.method == 'POST':
+        file = request.FILES.get('syllabus_file')
+        pasted_text = request.POST.get('syllabus_text', '').strip()
+
+        extracted_text = ''
+        if file:
+            from core.utils import extract_document_pipeline
+            res = extract_document_pipeline(file)
+            extracted_text = res.get('text', '')
+            subject.syllabus_file = file
+
+        if pasted_text:
+            extracted_text = (extracted_text + '\n' + pasted_text).strip() if extracted_text else pasted_text
+
+        if extracted_text:
+            subject.syllabus_text = extracted_text
+            subject.save()
+            messages.success(request, f'✅ Syllabus for "{subject.name}" uploaded and indexed by AI successfully!')
+        else:
+            messages.warning(request, 'Please upload a syllabus file or enter syllabus text.')
+
+    return redirect('studyplanner:topics', pk=pk)
+
+
+@login_required
+def ask_syllabus_ai(request, pk):
+    """
+    Ask AI questions regarding the uploaded syllabus (or any related and non-related concepts).
+    Supports AJAX JSON and form submit.
+    """
+    if request.user.role == 'admin' or request.user.is_superuser or request.user.is_staff:
+        subject = get_object_or_404(StudySubject, pk=pk)
+    else:
+        subject = get_object_or_404(StudySubject, pk=pk, student=request.user)
+
+    if request.method == 'POST':
+        import json
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.content_type == 'application/json'
+
+        if request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body)
+                question = data.get('question', '').strip()
+            except Exception:
+                question = ''
+        else:
+            question = request.POST.get('question', '').strip()
+
+        if not question:
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': 'Please provide a question.'}, status=400)
+            messages.error(request, 'Please enter a question.')
+            return redirect('studyplanner:topics', pk=pk)
+
+        from core.ai_service import generate_ai_response
+
+        syllabus_ctx = subject.syllabus_text[:4000] if subject.syllabus_text else "No syllabus uploaded yet. Answer based on general curriculum."
+
+        prompt = f"""You are an advanced AI Academic Tutor and Placement Advisor for engineering students.
+The student is studying the subject: "{subject.name}" (Code: {subject.code or 'N/A'}).
+
+SYLLABUS CONTEXT:
+\"\"\"
+{syllabus_ctx}
+\"\"\"
+
+STUDENT QUESTION:
+{question}
+
+INSTRUCTIONS:
+1. If the question relates to the syllabus above, reference specific modules, topics, and provide clear step-by-step explanations, formulas, or key exam focus points.
+2. If the student asks about a concept NOT in the syllabus or general technical/placement questions (e.g. coding doubts, career guidance, interview questions), answer thoroughly, accurately, and helpfully using your broad AI intelligence.
+3. Keep the explanation engaging, well-structured with bullet points where appropriate, and practical for campus placements.
+"""
+
+        ai_answer = generate_ai_response(
+            prompt=prompt,
+            system_prompt=f"You are PlacementPro's AI Subject & Placement Expert for {subject.name}."
+        )
+
+        if is_ajax:
+            return JsonResponse({'success': True, 'question': question, 'answer': ai_answer})
+
+        request.session['last_syllabus_q'] = question
+        request.session['last_syllabus_a'] = ai_answer
+        return redirect('studyplanner:topics', pk=pk)
+
+    return redirect('studyplanner:topics', pk=pk)
 
 

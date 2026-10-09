@@ -1,22 +1,25 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Topics — {{ subject.name }}{% endblock %}
-{% block page_title %}{{ subject.name }} — Topics{% endblock %}
+{% block title %}{{ subject.name }} — Syllabus & Topics — PlacementPro{% endblock %}
+{% block page_title %}{{ subject.name }} — Syllabus & Topics{% endblock %}
 {% block breadcrumb %}
   <a href="{% url 'studyplanner:home' %}">Study Planner</a> /
   <a href="{% url 'studyplanner:subjects' %}">My Subjects</a> /
   <span>{{ subject.name }}</span>
 {% endblock %}
 
-
 {% block content %}
 <div class="dash-welcome mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
   <div>
-    <h1 class="dash-title">Topics: <span>{{ subject.name }}</span> &#128218;</h1>
-    <p class="dash-subtitle">Track syllabus completion and update topic statuses</p>
+    <h1 class="dash-title">{{ subject.name }} &#128218;</h1>
+    <p class="dash-subtitle">Syllabus analysis, AI exam Q&A, and topic tracking for {{ subject.code|default:"Core" }}</p>
   </div>
   <div class="d-flex gap-2">
     <a href="{% url 'studyplanner:subjects' %}" class="dash-btn-outline">&larr; Back to Subjects</a>
+    <button type="button" class="btn btn-warning fw-700 shadow-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#uploadSyllabusModal">
+      <i class="bi bi-file-earmark-arrow-up-fill"></i>
+      <span>{% if subject.syllabus_text %}Update Syllabus{% else %}Upload Syllabus{% endif %}</span>
+    </button>
     <a href="{% url 'studyplanner:add_topic' subject_id=subject.pk %}" class="dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add Topic</a>
   </div>
 </div>
@@ -32,9 +35,89 @@
   </div>
 </div>
 
+<!-- AI Syllabus & Q&A Suite -->
+<div class="card border-0 shadow-sm mb-4" style="background:linear-gradient(145deg,#0f172a 0%,#1e1b4b 100%);color:#fff;border-radius:18px">
+  <div class="card-body p-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary px-3 py-2 rounded-pill"><i class="bi bi-cpu me-1"></i> NVIDIA Nemotron AI</span>
+        {% if subject.syllabus_text %}
+          <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill border border-success-subtle">
+            <i class="bi bi-check-circle-fill me-1"></i> Syllabus Indexed ({{ subject.syllabus_text|length }} chars)
+          </span>
+        {% else %}
+          <span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill border border-warning-subtle">
+            <i class="bi bi-info-circle me-1"></i> No Syllabus Uploaded (Using General Knowledge)
+          </span>
+        {% endif %}
+      </div>
+      <div>
+        <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#uploadSyllabusModal">
+          <i class="bi bi-upload me-1"></i> {% if subject.syllabus_text %}Replace Syllabus{% else %}Upload Syllabus{% endif %}
+        </button>
+      </div>
+    </div>
+
+    <h4 class="fw-800 text-white mb-2">Ask AI About Syllabus & Technical Concepts &#129302;</h4>
+    <p class="text-white-50 small mb-3">
+      Ask questions directly grounded in this subject's syllabus, or ask <strong>any related or non-related technical/placement questions</strong>. Our neural engine will analyze modules, provide step-by-step solutions, and offer exam insights.
+    </p>
+
+    <!-- Interactive AI Question Form -->
+    <form id="syllabusAiForm" method="post" action="{% url 'studyplanner:ask_syllabus_ai' pk=subject.pk %}">
+      {% csrf_token %}
+      <div class="input-group mb-2">
+        <input type="text" name="question" id="syllabusQuestionInput" class="form-control form-control-lg bg-dark text-white border-secondary" placeholder="e.g. What are the most important exam questions from this syllabus? Or explain 3NF vs BCNF..." required>
+        <button type="submit" id="askAiSubmitBtn" class="btn btn-warning fw-700 px-4">
+          <i class="bi bi-stars me-1"></i> Ask AI
+        </button>
+      </div>
+    </form>
+
+    <!-- Quick Question Chips -->
+    <div class="d-flex flex-wrap gap-2 mt-2">
+      <button type="button" class="btn btn-sm btn-outline-secondary text-white-50 quick-chip" onclick="fillQuestion('What are the top 5 high-weightage topics in this syllabus for campus placements?')">
+        &#127919; Top 5 High-Weightage Topics
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary text-white-50 quick-chip" onclick="fillQuestion('Generate 3 tricky interview questions with answers based on this subject')">
+        &#128188; 3 Placement Interview Questions
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary text-white-50 quick-chip" onclick="fillQuestion('Create a structured 7-day revision roadmap for this subject')">
+        &#128197; 7-Day Revision Roadmap
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary text-white-50 quick-chip" onclick="fillQuestion('Explain the core real-world application of this subject in tech companies like Google and Microsoft')">
+        &#128640; Real-World Industry Applications
+      </button>
+    </div>
+
+    <!-- AI Live Answer Box -->
+    <div id="aiResponseContainer" class="mt-4 {% if not last_syllabus_a %}d-none{% endif %}">
+      <div class="p-3 rounded-3" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15)">
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-secondary">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-5">&#129302;</span>
+            <strong class="text-warning" id="aiQuestionTitle">{{ last_syllabus_q|default:"AI Tutor Response:" }}</strong>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-light py-0 px-2" onclick="copyAiAnswer()">
+            <i class="bi bi-clipboard me-1"></i> Copy
+          </button>
+        </div>
+        <div class="text-white-50 lh-lg" id="aiAnswerContent" style="white-space:pre-wrap;font-size:14px;">
+          {{ last_syllabus_a|default:"" }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Topics List -->
 <div class="dash-card">
-  <h5 class="fw-bold text-dark mb-3">Syllabus Topics</h5>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold text-dark mb-0">Syllabus Topics ({{ topics.count }})</h5>
+    <a href="{% url 'studyplanner:add_topic' subject_id=subject.pk %}" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-plus-lg me-1"></i> Add Topic
+    </a>
+  </div>
   {% if topics %}
   <div class="table-responsive">
     <table class="table table-hover align-middle mb-0">
@@ -68,42 +151,130 @@
     </table>
   </div>
   {% else %}
-  <div class="text-center py-5">
-    <i class="bi bi-journal-text display-4 text-muted mb-2"></i>
-    <p class="text-muted">No topics added yet for this subject.</p>
-    <a href="{% url 'studyplanner:add_topic' subject_id=subject.pk %}" class="dash-btn-primary d-inline-flex">+ Add First Topic</a>
+  <div class="text-center py-4 text-muted">
+    <p class="mb-2">No topics added yet for this subject.</p>
+    <a href="{% url 'studyplanner:add_topic' subject_id=subject.pk %}" class="dash-btn-primary"><i class="bi bi-plus-lg me-1"></i> Add First Topic</a>
   </div>
   {% endif %}
 </div>
 
+<!-- Modal: Upload Syllabus -->
+<div class="modal fade" id="uploadSyllabusModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title fw-700">
+          <i class="bi bi-file-earmark-text text-warning me-2"></i>Upload Subject Syllabus
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'studyplanner:upload_syllabus' pk=subject.pk %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <p class="text-muted small mb-3">
+            Upload the university course syllabus (PDF, DOCX, TXT) or paste modules text below. Once uploaded, AI will extract key units and answer any technical questions from it.
+          </p>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small" for="syllabusFile">Upload Syllabus File (PDF, DOCX, TXT)</label>
+            <input type="file" name="syllabus_file" id="syllabusFile" class="form-control" accept=".pdf,.docx,.doc,.txt">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-bold small" for="syllabusText">Or Paste Syllabus Text / Modules</label>
+            <textarea name="syllabus_text" id="syllabusText" class="form-control" rows="5" placeholder="Module 1: Introduction to Algorithms...
+Module 2: Sorting, Divide and Conquer...
+Module 3: Dynamic Programming and Graphs...">{{ subject.syllabus_text|default:'' }}</textarea>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-700">
+            <i class="bi bi-cloud-arrow-up-fill me-1"></i>Save & Index Syllabus
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const progressBar = document.getElementById('subject-progress-bar');
-  if (progressBar) {
-    progressBar.style.width = (progressBar.getAttribute('data-width') || 0) + '%';
-  }
+function fillQuestion(q) {
+  const input = document.getElementById("syllabusQuestionInput");
+  input.value = q;
+  input.focus();
+}
 
-  document.querySelectorAll('.status-select').forEach(function(select) {
-    select.addEventListener('change', function() {
-      const topicId = this.getAttribute('data-topic-id');
-      const newStatus = this.value;
-      const csrfToken = '{{ csrf_token }}';
+function copyAiAnswer() {
+  const text = document.getElementById("aiAnswerContent").innerText;
+  navigator.clipboard.writeText(text);
+  alert("Answer copied to clipboard!");
+}
 
-      fetch('/study-planner/topics/' + topicId + '/update-status/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-CSRFToken': csrfToken,
-        },
-        body: 'status=' + encodeURIComponent(newStatus)
-      })
-      .then(res => res.json())
-      .then(data => {
-        if(data.status === 'ok') {
-          document.getElementById('subject-completion-badge').innerText = data.completion + '%';
-          document.getElementById('subject-progress-bar').style.width = data.completion + '%';
-        }
-      });
+// AJAX handler for Ask AI Form
+document.getElementById("syllabusAiForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const qInput = document.getElementById("syllabusQuestionInput");
+  const q = qInput.value.trim();
+  if (!q) return;
+
+  const btn = document.getElementById("askAiSubmitBtn");
+  const container = document.getElementById("aiResponseContainer");
+  const title = document.getElementById("aiQuestionTitle");
+  const content = document.getElementById("aiAnswerContent");
+
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Thinking...';
+  btn.disabled = true;
+
+  container.classList.remove("d-none");
+  title.innerText = q;
+  content.innerText = "Analyzing syllabus and generating detailed response with NVIDIA Nemotron...";
+
+  fetch("{% url 'studyplanner:ask_syllabus_ai' pk=subject.pk %}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token }}",
+      "X-Requested-With": "XMLHttpRequest"
+    },
+    body: JSON.stringify({ question: q })
+  })
+  .then(res => res.json())
+  .then(data => {
+    btn.innerHTML = '<i class="bi bi-stars me-1"></i> Ask AI';
+    btn.disabled = false;
+    if (data.success) {
+      content.innerText = data.answer;
+    } else {
+      content.innerText = "Error: " + (data.error || "Unable to get AI answer. Please try again.");
+    }
+  })
+  .catch(err => {
+    btn.innerHTML = '<i class="bi bi-stars me-1"></i> Ask AI';
+    btn.disabled = false;
+    content.innerText = "Error communicating with AI service. Please try again.";
+  });
+});
+
+// Update topic status
+document.querySelectorAll('.status-select').forEach(function(select) {
+  select.addEventListener('change', function() {
+    const topicId = this.dataset.topicId;
+    const newStatus = this.value;
+    fetch(`/study-planner/topics/${topicId}/update-status/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: `status=${newStatus}`
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('subject-completion-badge').innerText = data.completion_percentage + '%';
+        document.getElementById('subject-progress-bar').style.width = data.completion_percentage + '%';
+      }
     });
   });
 });

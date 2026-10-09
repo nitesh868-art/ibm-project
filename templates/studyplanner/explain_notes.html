@@ -48,7 +48,8 @@
   <form method="POST" action="{% url 'studyplanner:explain_notes' pk=material.pk %}">
     {% csrf_token %}
     <div class="input-group">
-      <input type="text" name="doc_question" class="form-control" placeholder="e.g. What are the key properties mentioned in chapter 1?" value="{{ doc_question }}">
+      <label for="docQuestionInput" class="visually-hidden">Ask Question</label>
+      <input type="text" name="doc_question" id="docQuestionInput" class="form-control" placeholder="e.g. What are the key properties mentioned in chapter 1?" value="{{ doc_question }}" aria-label="Question about document">
       <button type="submit" class="dash-btn-primary"><i class="bi bi-send me-1"></i> Ask Document</button>
     </div>
   </form>

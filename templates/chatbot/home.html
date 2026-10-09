@@ -1,309 +1,1964 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}AI Academic Copilot — PlacementPro{% endblock %}
+{% block title %}AI Placement Assistant — PlacementPro AI Copilot{% endblock %}
 
 {% block extra_css %}
 <style>
-.chat-layout{display:grid;grid-template-columns:280px 1fr;gap:0;height:calc(100vh - 120px);background:var(--surface,#fff);border:1px solid var(--border-color,#e2e8f0);border-radius:20px;overflow:hidden}
-.chat-sidebar{background:var(--bg-light,#f8fafc);border-right:1px solid var(--border-color,#e2e8f0);display:flex;flex-direction:column;padding:0}
-.chat-sidebar-header{padding:20px;border-bottom:1px solid var(--border-color,#e2e8f0)}
-.chat-sidebar-header h3{font-size:14px;font-weight:700;color:var(--text-primary,#0f172a);margin-bottom:4px}
-.chat-sidebar-header p{font-size:12px;color:var(--text-muted,#64748b);margin:0}
-.chat-topics{padding:12px;flex:1;overflow-y:auto}
-.chat-topic-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted,#94a3b8);padding:8px 8px 4px;margin-bottom:4px}
-.chat-topic{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--text-primary,#374151);font-weight:500}
-.chat-topic:hover,.chat-topic.active{background:rgba(99,102,241,.15);color:var(--primary,#6366f1)}
-.chat-topic i{font-size:15px;width:18px}
-.chat-sidebar-footer{padding:12px;border-top:1px solid var(--border-color,#e2e8f0)}
-.clear-chat-btn{width:100%;padding:8px;background:transparent;border:1.5px solid var(--border-color,#e2e8f0);border-radius:10px;font-size:12px;font-weight:600;color:var(--text-muted,#64748b);cursor:pointer;transition:all .2s}
-.clear-chat-btn:hover{border-color:#ef4444;color:#ef4444}
+/* ==========================================================================
+   PlacementPro Neural AI — Next-Gen AI Interface Styling
+   ========================================================================== */
 
-/* Main chat area */
-.chat-main{display:flex;flex-direction:column;min-height:0;background:var(--surface,#fff)}
-.chat-header{padding:12px 20px;border-bottom:1px solid var(--border-color,#e2e8f0);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--surface,#fff)}
-.chat-header-left{display:flex;align-items:center;gap:12px}
-.chat-ai-avatar{width:40px;height:40px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
-.chat-ai-info strong{display:block;font-size:14px;font-weight:700;color:var(--text-primary,#0f172a)}
-.chat-ai-info small{font-size:12px;color:#10b981;display:flex;align-items:center;gap:4px}
-.online-dot{width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+:root {
+  --ai-primary: #6366f1;
+  --ai-primary-glow: rgba(99, 102, 241, 0.35);
+  --ai-secondary: #8b5cf6;
+  --ai-cyan: #06b6d4;
+  --ai-cyan-glow: rgba(6, 182, 212, 0.3);
+  --ai-emerald: #10b981;
+  --ai-emerald-glow: rgba(16, 185, 129, 0.3);
+  --ai-bg-glass: rgba(255, 255, 255, 0.85);
+  --ai-border-glass: rgba(226, 232, 240, 0.85);
+  --ai-card-bg: #ffffff;
+  --ai-card-hover: #f8fafc;
+  --ai-bubble-ai: #f8fafc;
+  --ai-bubble-user: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --ai-text-main: #0f172a;
+  --ai-text-sub: #64748b;
+  --ai-code-bg: #1e293b;
+  --ai-code-text: #f1f5f9;
+}
 
-.mode-pills{display:flex;gap:6px}
-.mode-pill{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:600;border:1px solid var(--border-color,#e2e8f0);background:var(--surface,#f8fafc);color:var(--text-muted,#64748b);cursor:pointer;transition:all .2s}
-.mode-pill.active{background:#6366f1;color:#fff;border-color:#6366f1}
+[data-theme="dark"] {
+  --ai-primary-glow: rgba(99, 102, 241, 0.5);
+  --ai-bg-glass: rgba(15, 23, 42, 0.88);
+  --ai-border-glass: rgba(51, 65, 85, 0.75);
+  --ai-card-bg: #0f172a;
+  --ai-card-hover: #1e293b;
+  --ai-bubble-ai: #1e293b;
+  --ai-text-main: #f8fafc;
+  --ai-text-sub: #94a3b8;
+  --ai-code-bg: #0b1120;
+  --ai-code-text: #e2e8f0;
+}
 
-.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth;background:var(--surface,#fff)}
-.msg{display:flex;gap:10px;max-width:85%}
-.msg.user-msg{flex-direction:row-reverse;align-self:flex-end}
-.msg.ai-msg{align-self:flex-start}
-.msg-avatar{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.ai-msg .msg-avatar{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
-.user-msg .msg-avatar{background:#0f172a;color:#fff;font-size:11px;font-weight:700}
-.msg-bubble{padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.6}
-.ai-msg .msg-bubble{background:var(--bg-light,#f8fafc);border:1px solid var(--border-color,#e2e8f0);color:var(--text-primary,#0f172a);border-top-left-radius:4px}
-.user-msg .msg-bubble{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-top-right-radius:4px}
-.msg-bubble pre{background:var(--bg-input,rgba(0,0,0,.06));color:var(--text-primary);border:1px solid var(--border-color);padding:10px;border-radius:8px;overflow-x:auto;font-size:12px;margin:8px 0}
-.user-msg .msg-bubble pre{background:rgba(255,255,255,.15);color:#fff}
-.msg-bubble code{font-family:'Fira Code','Courier New',monospace;font-size:12px}
-.msg-time{font-size:10px;color:var(--text-muted,#94a3b8);margin-top:4px;text-align:right}
-.ai-msg .msg-time{text-align:left}
-.typing-indicator{display:flex;gap:4px;align-items:center;padding:14px 16px}
-.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted,#94a3b8);animation:typingBounce 1.4s infinite ease-in-out}
-.typing-dot:nth-child(2){animation-delay:.2s}
-.typing-dot:nth-child(3){animation-delay:.4s}
-@keyframes typingBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+/* Master Layout */
+.ai-portal-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: calc(100vh - 110px);
+  min-height: 620px;
+}
 
-/* Input area */
-.chat-input-area{padding:16px 20px;border-top:1px solid var(--border-color,#e2e8f0);background:var(--surface,#fff)}
-.chat-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.suggestion-chip{padding:5px 12px;background:var(--surface,#f0f4ff);border:1px solid var(--border-color,#c7d2fe);border-radius:100px;font-size:12px;color:var(--primary,#6366f1);cursor:pointer;transition:all .2s;white-space:nowrap}
-.suggestion-chip:hover{background:rgba(99,102,241,.15);border-color:var(--primary,#6366f1)}
-.chat-form{display:flex;gap:8px;align-items:flex-end}
-.chat-textarea{flex:1;padding:11px 16px;font-size:14px;border:1.5px solid var(--border-color,#e2e8f0);border-radius:14px;outline:none;resize:none;max-height:120px;min-height:44px;font-family:inherit;color:var(--text-primary,#0f172a);background:var(--bg-input,#fff);transition:border-color .2s;line-height:1.5}
-.chat-textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
-.chat-send-btn{width:44px;height:44px;min-width:44px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:18px;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center}
-.chat-send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,.4)}
-.chat-send-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.ai-shell {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  flex: 1;
+  background: var(--ai-bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--ai-border-glass);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.08);
+  position: relative;
+}
 
-@media(max-width:768px){.chat-layout{grid-template-columns:1fr;height:auto}.chat-sidebar{display:none}.chat-main{height:calc(100vh - 160px)}}
+/* --------------------------------------------------------------------------
+   Sidebar Controls
+   -------------------------------------------------------------------------- */
+.ai-sidebar {
+  background: var(--ai-card-bg);
+  border-right: 1px solid var(--ai-border-glass);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.ai-sidebar-top {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--ai-border-glass);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-logo-core {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  box-shadow: 0 0 20px var(--ai-primary-glow);
+  position: relative;
+}
+
+.ai-logo-core::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 17px;
+  border: 1.5px dashed rgba(99, 102, 241, 0.4);
+  animation: spinSlow 15s linear infinite;
+}
+
+@keyframes spinSlow {
+  100% { transform: rotate(360deg); }
+}
+
+.ai-brand-text h4 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--ai-text-main);
+  letter-spacing: -0.3px;
+}
+
+.ai-brand-text p {
+  font-size: 11.5px;
+  color: var(--ai-text-sub);
+  margin: 0;
+}
+
+.new-chat-btn {
+  width: 100%;
+  padding: 9px 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.12));
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 12px;
+  color: var(--ai-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.25s ease;
+}
+
+.new-chat-btn:hover {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+  box-shadow: 0 6px 18px var(--ai-primary-glow);
+  transform: translateY(-1px);
+}
+
+.ai-sidebar-scroll {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sidebar-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ai-text-sub);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Mode Switcher Cards */
+.ai-mode-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-mode-card {
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ai-text-main);
+}
+
+.ai-mode-card:hover {
+  background: var(--ai-card-hover);
+  border-color: var(--ai-border-glass);
+}
+
+.ai-mode-card.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
+  border-color: rgba(99, 102, 241, 0.4);
+  color: var(--ai-primary);
+  font-weight: 600;
+}
+
+.ai-mode-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--ai-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.ai-mode-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-mode-info span {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.ai-mode-info small {
+  font-size: 10.5px;
+  color: var(--ai-text-sub);
+}
+
+/* Placement Links */
+.ai-tool-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--ai-text-main);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.ai-tool-link:hover {
+  background: var(--ai-card-hover);
+  color: var(--ai-primary);
+  transform: translateX(3px);
+}
+
+/* Student Context Pill Card */
+.ai-student-track-card {
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(6, 182, 212, 0.05));
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.ai-student-track-card small {
+  font-size: 10.5px;
+  color: var(--ai-text-sub);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.ai-student-track-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.track-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-border-glass);
+  color: var(--ai-text-main);
+  font-weight: 600;
+}
+
+.ai-sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--ai-border-glass);
+  background: var(--ai-card-bg);
+  display: flex;
+  gap: 8px;
+}
+
+.action-icon-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid var(--ai-border-glass);
+  color: var(--ai-text-sub);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.action-icon-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.action-icon-btn.export-btn:hover {
+  border-color: var(--ai-cyan);
+  color: var(--ai-cyan);
+  background: rgba(6, 182, 212, 0.05);
+}
+
+/* --------------------------------------------------------------------------
+   Main Chat Canvas
+   -------------------------------------------------------------------------- */
+.ai-main-canvas {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 10%, rgba(99, 102, 241, 0.04) 0%, transparent 70%);
+}
+
+/* Top AI Status Bar */
+.ai-topbar {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ai-border-glass);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--ai-card-bg);
+  z-index: 5;
+}
+
+.ai-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-online-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ai-emerald);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ai-emerald);
+  box-shadow: 0 0 8px var(--ai-emerald);
+  animation: pulseBeacon 2s infinite ease-in-out;
+}
+
+@keyframes pulseBeacon {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.ai-model-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ai-text-sub);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ai-model-tag .badge-nemotron {
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.ai-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-pill-btn {
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--ai-border-glass);
+  background: var(--ai-card-bg);
+  color: var(--ai-text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mode-pill-btn:hover {
+  border-color: var(--ai-primary);
+  color: var(--ai-primary);
+}
+
+.mode-pill-btn.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 12px var(--ai-primary-glow);
+}
+
+/* --------------------------------------------------------------------------
+   Messages Stream
+   -------------------------------------------------------------------------- */
+.ai-messages-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scroll-behavior: smooth;
+}
+
+/* Hero Welcome State */
+.ai-hero-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 820px;
+  margin: auto;
+  padding: 16px 0;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Holographic Neural Orb */
+.neural-orb-wrapper {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.neural-orb-core {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #a855f7, #6366f1, #06b6d4);
+  box-shadow: 0 0 35px var(--ai-primary-glow), inset 0 0 15px rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #ffffff;
+  z-index: 2;
+  animation: orbFloat 4s ease-in-out infinite;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-5px) scale(1.03); }
+}
+
+.neural-orb-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(99, 102, 241, 0.3);
+  animation: ringRotate 8s linear infinite;
+}
+
+.ring-1 {
+  width: 78px;
+  height: 78px;
+  border-top-color: #6366f1;
+  border-right-color: transparent;
+}
+
+.ring-2 {
+  width: 96px;
+  height: 96px;
+  border-bottom-color: #06b6d4;
+  border-left-color: transparent;
+  animation-duration: 12s;
+  animation-direction: reverse;
+}
+
+@keyframes ringRotate {
+  100% { transform: rotate(360deg); }
+}
+
+.ai-hero-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ai-text-main);
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+
+.ai-hero-title .gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ai-hero-desc {
+  font-size: 13.5px;
+  color: var(--ai-text-sub);
+  max-width: 580px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+/* Category Filter Tags */
+.prompt-category-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.prompt-cat-chip {
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-border-glass);
+  color: var(--ai-text-sub);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prompt-cat-chip:hover, .prompt-cat-chip.active {
+  background: var(--ai-primary);
+  color: #fff;
+  border-color: var(--ai-primary);
+  box-shadow: 0 2px 8px var(--ai-primary-glow);
+}
+
+/* Prompt Action Cards Grid */
+.prompt-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.prompt-card {
+  background: var(--ai-card-bg);
+  border: 1px solid var(--ai-border-glass);
+  border-radius: 16px;
+  padding: 15px 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.prompt-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ai-primary), var(--ai-cyan));
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.prompt-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.12);
+  background: var(--ai-card-hover);
+}
+
+.prompt-card:hover::before {
+  opacity: 1;
+}
+
+.prompt-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.prompt-card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.p-icon-dsa { background: rgba(99, 102, 241, 0.12); color: #6366f1; }
+.p-icon-resume { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.p-icon-interview { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+.p-icon-company { background: rgba(6, 182, 212, 0.12); color: #06b6d4; }
+.p-icon-aptitude { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.p-icon-plan { background: rgba(168, 85, 247, 0.12); color: #a855f7; }
+
+.prompt-card-arrow {
+  font-size: 13px;
+  color: var(--ai-text-sub);
+  opacity: 0;
+  transition: all 0.2s;
+  transform: translateX(-4px);
+}
+
+.prompt-card:hover .prompt-card-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--ai-primary);
+}
+
+.prompt-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ai-text-main);
+  margin: 0;
+}
+
+.prompt-card-snippet {
+  font-size: 11.5px;
+  color: var(--ai-text-sub);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   Message Bubbles
+   -------------------------------------------------------------------------- */
+.msg-row {
+  display: flex;
+  gap: 14px;
+  max-width: 90%;
+  animation: msgAppear 0.25s ease-out;
+}
+
+@keyframes msgAppear {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-row.user-row {
+  flex-direction: row-reverse;
+  align-self: flex-end;
+}
+
+.msg-row.ai-row {
+  align-self: flex-start;
+  width: 90%;
+}
+
+.msg-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.ai-row .msg-avatar {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-row .msg-avatar {
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.msg-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: calc(100% - 48px);
+}
+
+.msg-meta-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--ai-text-sub);
+}
+
+.msg-bubble {
+  padding: 15px 18px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.68;
+  word-break: break-word;
+  position: relative;
+}
+
+.ai-row .msg-bubble {
+  background: var(--ai-bubble-ai);
+  border: 1px solid var(--ai-border-glass);
+  color: var(--ai-text-main);
+  border-top-left-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.user-row .msg-bubble {
+  background: var(--ai-bubble-user);
+  color: #ffffff;
+  border-top-right-radius: 4px;
+  box-shadow: 0 6px 20px var(--ai-primary-glow);
+}
+
+.ai-row .msg-bubble h3,
+.ai-row .msg-bubble h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  color: var(--ai-text-main);
+}
+
+.ai-row .msg-bubble h3:first-child,
+.ai-row .msg-bubble h4:first-child {
+  margin-top: 0;
+}
+
+.ai-row .msg-bubble p {
+  margin-bottom: 8px;
+}
+
+.ai-row .msg-bubble p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-row .msg-bubble ul, .ai-row .msg-bubble ol {
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+
+.ai-row .msg-bubble li {
+  margin-bottom: 4px;
+}
+
+.ai-row .msg-bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ai-row .msg-bubble th,
+.ai-row .msg-bubble td {
+  padding: 7px 10px;
+  border: 1px solid var(--ai-border-glass);
+  text-align: left;
+}
+
+.ai-row .msg-bubble th {
+  background: rgba(99, 102, 241, 0.08);
+  font-weight: 700;
+}
+
+/* Code Container with Copy Bar */
+.code-box-container {
+  margin: 10px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--ai-code-bg);
+}
+
+.code-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.code-lang-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.code-copy-btn {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.code-copy-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.code-box-container pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 12px;
+  color: var(--ai-code-text);
+  line-height: 1.5;
+}
+
+.msg-bubble code:not(pre code) {
+  padding: 2px 5px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: 'Fira Code', monospace;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--ai-primary);
+}
+
+.user-row .msg-bubble code:not(pre code) {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* Message Actions Bar */
+.msg-actions-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.msg-tool-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ai-text-sub);
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.msg-tool-btn:hover {
+  background: var(--ai-card-hover);
+  border-color: var(--ai-border-glass);
+  color: var(--ai-primary);
+}
+
+/* Typing State */
+.ai-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.t-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ai-primary);
+  animation: typingGlow 1.4s infinite ease-in-out;
+}
+
+.t-dot:nth-child(2) { animation-delay: 0.2s; }
+.t-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingGlow {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-7px); opacity: 1; box-shadow: 0 0 8px var(--ai-primary); }
+}
+
+.typing-label {
+  font-size: 12px;
+  color: var(--ai-text-sub);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   Interactive Command Bar & Dock
+   -------------------------------------------------------------------------- */
+.ai-input-dock {
+  padding: 12px 20px 18px;
+  background: var(--ai-card-bg);
+  border-top: 1px solid var(--ai-border-glass);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 5;
+}
+
+/* Fast Action Chips Carousel */
+.quick-prompt-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.quick-prompt-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.dock-chip {
+  padding: 5px 12px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--ai-card-hover);
+  border: 1px solid var(--ai-border-glass);
+  color: var(--ai-text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s;
+}
+
+.dock-chip:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.35);
+  color: var(--ai-primary);
+  transform: translateY(-1px);
+}
+
+/* Main Form Dock */
+.ai-dock-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--ai-card-hover);
+  border: 1.5px solid var(--ai-border-glass);
+  border-radius: 16px;
+  padding: 8px 12px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.ai-dock-box:focus-within {
+  border-color: var(--ai-primary);
+  box-shadow: 0 0 0 3px var(--ai-primary-glow), 0 8px 24px rgba(0, 0, 0, 0.04);
+  background: var(--ai-card-bg);
+}
+
+.dock-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: var(--ai-text-sub);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.dock-action-btn:hover {
+  color: var(--ai-primary);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.dock-action-btn.active-mic {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+  animation: micPulse 1.2s infinite;
+}
+
+@keyframes micPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.ai-chat-input {
+  flex: 1;
+  padding: 8px 6px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--ai-text-main);
+  resize: none;
+  font-family: inherit;
+  max-height: 130px;
+  min-height: 36px;
+  line-height: 1.5;
+}
+
+.ai-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px var(--ai-primary-glow);
+  flex-shrink: 0;
+}
+
+.ai-send-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--ai-primary-glow);
+}
+
+.ai-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.dock-hint-text {
+  font-size: 11px;
+  color: var(--ai-text-sub);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+/* Upload preview pill */
+.upload-preview-pill {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  color: var(--ai-primary);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.upload-preview-pill .remove-file {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+@media (max-width: 860px) {
+  .ai-shell {
+    grid-template-columns: 1fr;
+  }
+  .ai-sidebar {
+    display: none;
+  }
+  .ai-portal-container {
+    height: auto;
+    min-height: calc(100vh - 140px);
+  }
+  .prompt-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h1 style="font-size:22px;font-weight:800;color:var(--text-primary,#0f172a);margin:0">AI Academic &amp; Career Tutor &#129302;</h1>
-    <p style="font-size:13px;color:#64748b;margin:0">Adapted for your B.Tech Academic Level &bull; NVIDIA Nemotron AI</p>
-  </div>
-</div>
+<div class="ai-portal-container">
 
-<div class="chat-layout">
-  <!-- Sidebar -->
-  <div class="chat-sidebar">
-    <div class="chat-sidebar-header">
-      <h3>&#129302; PlacementPro AI</h3>
-      <p>Powered by NVIDIA Nemotron</p>
-    </div>
-    <div class="chat-topics">
-      <div class="chat-topic-label">Learning Modes</div>
-      <div class="chat-topic active" onclick="setMode('tutor', this)"><i class="bi bi-robot"></i>General Academic Tutor</div>
-      <div class="chat-topic" onclick="setMode('teach_me', this)"><i class="bi bi-book"></i>Teach Me (Interactive)</div>
-      <div class="chat-topic" onclick="setMode('exam_prep', this)"><i class="bi bi-journal-check"></i>Exam Prep (2-Mark / 7-Mark)</div>
+  <!-- ========================================================================
+       AI PORTAL SHELL
+       ======================================================================== -->
+  <div class="ai-shell">
 
-      <div class="chat-topic-label" style="margin-top:12px">Quick Topics</div>
-      <div class="chat-topic" onclick="askTopic('Explain time complexity and Big O notation')"><i class="bi bi-lightning-charge"></i>DSA Concepts</div>
-      <div class="chat-topic" onclick="askTopic('What are ACID properties in DBMS? Explain with examples')"><i class="bi bi-database"></i>DBMS</div>
-      <div class="chat-topic" onclick="askTopic('Explain process scheduling algorithms in Operating Systems')"><i class="bi bi-cpu"></i>Operating Systems</div>
-      <div class="chat-topic" onclick="askTopic('Explain TCP vs UDP with use cases')"><i class="bi bi-wifi"></i>Computer Networks</div>
-      <div class="chat-topic" onclick="askTopic('Give me 5 aptitude questions on time and work')"><i class="bi bi-calculator"></i>Aptitude</div>
-      <div class="chat-topic" onclick="askTopic('Generate 5 HR interview questions and how to answer them')"><i class="bi bi-person-check"></i>HR Interview</div>
-    </div>
-    <div class="chat-sidebar-footer">
-      <button class="clear-chat-btn" onclick="clearChat()"><i class="bi bi-trash me-2"></i>Clear Conversation</button>
-    </div>
-  </div>
-
-  <!-- Main Chat -->
-  <div class="chat-main">
-    <div class="chat-header">
-      <div class="chat-header-left">
-        <div class="chat-ai-avatar">&#129302;</div>
-        <div class="chat-ai-info">
-          <strong>PlacementPro AI Tutor</strong>
-          <small><span class="online-dot"></span> Online &bull; NVIDIA Nemotron</small>
-        </div>
-      </div>
-      <div class="mode-pills">
-        <span class="mode-pill active" id="pill-tutor" onclick="setMode('tutor')">Tutor</span>
-        <span class="mode-pill" id="pill-teach_me" onclick="setMode('teach_me')">Teach Me</span>
-        <span class="mode-pill" id="pill-exam_prep" onclick="setMode('exam_prep')">Exam Prep</span>
-      </div>
-    </div>
-
-    <div class="chat-messages" id="chatMessages">
-      <!-- Welcome message -->
-      <div class="msg ai-msg">
-        <div class="msg-avatar">&#129302;</div>
-        <div>
-          <div class="msg-bubble">
-            <strong>Hello, {{ request.user.first_name|default:request.user.username }}!</strong> &#128075;<br><br>
-            I'm your <strong>AI Academic &amp; Career Copilot</strong> tuned for <strong>Year {{ request.user.student_profile.year|default:"3" }} {{ request.user.student_profile.branch|default:"CSE" }}</strong>.<br><br>
-            Select a mode above:<br>
-            &bull; <strong>Tutor Mode:</strong> Ask any programming or theory doubt.<br>
-            &bull; <strong>Teach Me Mode:</strong> Step-by-step interactive tutor.<br>
-            &bull; <strong>Exam Prep Mode:</strong> Generate 2-mark definitions &amp; 7-mark structured answers.<br>
-            &bull; <strong>My Notes:</strong> Upload lecture notes under <a href="/study-planner/materials/" class="text-primary">My Notes</a> for instant AI breakdowns!
+    <!-- ── LEFT AI CONTROL PANEL ── -->
+    <aside class="ai-sidebar">
+      <div class="ai-sidebar-top">
+        <div class="ai-brand">
+          <div class="ai-logo-core">
+            <i class="bi bi-robot"></i>
           </div>
-          <div class="msg-time">Just now</div>
-        </div>
-      </div>
-
-      {% if history %}
-        {% for msg in history %}
-        <div class="msg {% if msg.role == 'user' %}user-msg{% else %}ai-msg{% endif %}">
-          <div class="msg-avatar">{% if msg.role == 'user' %}{{ request.user.first_name|slice:":2"|upper|default:"U" }}{% else %}&#129302;{% endif %}</div>
-          <div>
-            <div class="msg-bubble">{{ msg.content }}</div>
-            <div class="msg-time">Earlier</div>
+          <div class="ai-brand-text">
+            <h4>AI Placement Assistant</h4>
+            <p>PlacementPro Neural Copilot v3.5</p>
           </div>
         </div>
-        {% endfor %}
-      {% endif %}
-    </div>
 
-    <div class="chat-input-area">
-      <div class="chat-suggestions" id="suggestions">
-        <span class="suggestion-chip" onclick="useSuggestion(this)">&#128204; Explain binary search</span>
-        <span class="suggestion-chip" onclick="useSuggestion(this)">&#128200; Time complexity of BFS?</span>
-        <span class="suggestion-chip" onclick="useSuggestion(this)">&#127919; Tell me about yourself answer</span>
-        <span class="suggestion-chip" onclick="useSuggestion(this)">&#128218; DBMS 3NF vs BCNF</span>
-      </div>
-      <div class="chat-form">
-        <textarea id="chatInput" class="chat-textarea" placeholder="Ask anything... (Shift+Enter for new line)" rows="1"
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="chat-send-btn" onclick="sendMessage()" id="sendBtn" title="Send (Enter)">
-          <i class="bi bi-send-fill" style="font-size:16px"></i>
+        <button class="new-chat-btn" onclick="startFreshChat()">
+          <i class="bi bi-plus-lg"></i> + New Session
         </button>
       </div>
-    </div>
+
+      <div class="ai-sidebar-scroll">
+
+        <!-- Learning & Coaching Modes -->
+        <div>
+          <div class="sidebar-heading">
+            <span>AI Reasoning Modes</span>
+            <i class="bi bi-sliders2"></i>
+          </div>
+          <div class="ai-mode-grid">
+            <div class="ai-mode-card active" id="card-mode-tutor" onclick="selectMode('tutor')">
+              <div class="ai-mode-icon"><i class="bi bi-mortarboard-fill"></i></div>
+              <div class="ai-mode-info">
+                <span>Placement Tutor</span>
+                <small>In-depth, structured guidance</small>
+              </div>
+            </div>
+            <div class="ai-mode-card" id="card-mode-teach_me" onclick="selectMode('teach_me')">
+              <div class="ai-mode-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+              <div class="ai-mode-info">
+                <span>Teach Me (Interactive)</span>
+                <small>Step-by-step with quizzes</small>
+              </div>
+            </div>
+            <div class="ai-mode-card" id="card-mode-interview" onclick="selectMode('interview')">
+              <div class="ai-mode-icon"><i class="bi bi-mic-fill"></i></div>
+              <div class="ai-mode-info">
+                <span>Mock Interview</span>
+                <small>Simulates tech/HR rounds</small>
+              </div>
+            </div>
+            <div class="ai-mode-card" id="card-mode-exam_prep" onclick="selectMode('exam_prep')">
+              <div class="ai-mode-icon"><i class="bi bi-journal-check"></i></div>
+              <div class="ai-mode-info">
+                <span>Exam &amp; Test Prep</span>
+                <small>2-mark, 7-mark &amp; MCQs</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Student Profile Context -->
+        <div class="ai-student-track-card">
+          <small><i class="bi bi-person-badge me-1"></i>Active Student Context</small>
+          <div class="ai-student-track-badges">
+            <span class="track-badge">Year {{ request.user.student_profile.year|default:3 }}</span>
+            <span class="track-badge">{{ request.user.student_profile.branch|default:"CSE" }}</span>
+            <span class="track-badge">Streak: {{ request.user.student_profile.study_streak|default:0 }}d 🔥</span>
+          </div>
+        </div>
+
+        <!-- Direct Placement Shortcuts -->
+        <div>
+          <div class="sidebar-heading">Placement Shortcuts</div>
+          <a href="{% url 'studyplanner:plans' %}" class="ai-tool-link">
+            <span><i class="bi bi-calendar3 text-primary me-2"></i>Study Plans &amp; Schedules</span>
+            <i class="bi bi-chevron-right text-muted small"></i>
+          </a>
+          <a href="{% url 'resume_builder:home' %}" class="ai-tool-link">
+            <span><i class="bi bi-file-earmark-person text-success me-2"></i>Resume Review &amp; ATS Score</span>
+            <i class="bi bi-chevron-right text-muted small"></i>
+          </a>
+          <a href="{% url 'interview:tips' %}" class="ai-tool-link">
+            <span><i class="bi bi-patch-question text-warning me-2"></i>Interview Tips</span>
+            <i class="bi bi-chevron-right text-muted small"></i>
+          </a>
+          <a href="{% url 'companies:list' %}" class="ai-tool-link">
+            <span><i class="bi bi-building text-info me-2"></i>Companies</span>
+            <i class="bi bi-chevron-right text-muted small"></i>
+          </a>
+          <a href="{% url 'quiz:home' %}" class="ai-tool-link">
+            <span><i class="bi bi-calculator text-danger me-2"></i>Aptitude Practice</span>
+            <i class="bi bi-chevron-right text-muted small"></i>
+          </a>
+        </div>
+
+      </div>
+
+      <div class="ai-sidebar-footer">
+        <button class="action-icon-btn export-btn" onclick="exportChat()" title="Download or print conversation">
+          <i class="bi bi-download"></i> Export
+        </button>
+        <button class="action-icon-btn" onclick="clearChat()" title="Reset session">
+          <i class="bi bi-trash3"></i> Clear
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── RIGHT CHAT CANVAS ── -->
+    <main class="ai-main-canvas">
+
+      <!-- Top AI Status Bar -->
+      <div class="ai-topbar">
+        <div class="ai-topbar-left">
+          <div class="ai-online-indicator">
+            <span class="pulse-dot"></span>
+            <span>Neural Engine Online</span>
+          </div>
+          <div class="ai-model-tag d-none d-sm-flex">
+            <span>Model:</span>
+            <span class="badge-nemotron">NVIDIA Nemotron Super 30B / 120B</span>
+          </div>
+        </div>
+
+        <div class="ai-topbar-right">
+          <button class="mode-pill-btn active" id="pill-tutor" onclick="selectMode('tutor')">
+            <i class="bi bi-mortarboard"></i> Tutor
+          </button>
+          <button class="mode-pill-btn" id="pill-teach_me" onclick="selectMode('teach_me')">
+            <i class="bi bi-lightning"></i> Teach
+          </button>
+          <button class="mode-pill-btn" id="pill-interview" onclick="selectMode('interview')">
+            <i class="bi bi-mic"></i> Interview
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages Stream -->
+      <div class="ai-messages-stream" id="chatStream">
+
+        <!-- Welcome Hero -->
+        <div class="ai-hero-welcome" id="heroWelcome" {% if history %}style="display:none"{% endif %}>
+          <div class="neural-orb-wrapper">
+            <div class="neural-orb-ring ring-1"></div>
+            <div class="neural-orb-ring ring-2"></div>
+            <div class="neural-orb-core">
+              <i class="bi bi-stars"></i>
+            </div>
+          </div>
+
+          <h2 class="ai-hero-title">
+            AI Placement Assistant for <span class="gradient-text">{{ request.user.first_name|default:request.user.username }}</span>
+          </h2>
+          <p class="ai-hero-desc">
+            Your specialized 24/7 AI tutor for cracking high-package campus placements. Ask any DSA problem, practice mock interviews, review ATS resumes, or generate personalized schedules.
+          </p>
+
+          <!-- Prompt Category Filter -->
+          <div class="prompt-category-bar">
+            <span class="prompt-cat-chip active" onclick="filterCards('all', this)">✨ All Categories</span>
+            <span class="prompt-cat-chip" onclick="filterCards('dsa', this)">⚡ DSA &amp; Code</span>
+            <span class="prompt-cat-chip" onclick="filterCards('resume', this)">📄 Resume Review &amp; ATS Score</span>
+            <span class="prompt-cat-chip" onclick="filterCards('interview', this)">🎯 Interview Tips</span>
+            <span class="prompt-cat-chip" onclick="filterCards('company', this)">🏢 Companies</span>
+            <span class="prompt-cat-chip" onclick="filterCards('aptitude', this)">🧠 Aptitude</span>
+          </div>
+
+          <!-- 6 Interactive Prompt Launch Cards -->
+          <div class="prompt-cards-grid" id="promptCardsGrid">
+
+            <!-- Card 1: Binary Search -->
+            <div class="prompt-card" data-cat="dsa" onclick="launchPrompt('Explain Binary Search with Time Complexity, edge cases, and standard Python/C++ code.')">
+              <div class="prompt-card-top">
+                <div class="prompt-card-icon p-icon-dsa"><i class="bi bi-code-slash"></i></div>
+                <i class="bi bi-arrow-up-right prompt-card-arrow"></i>
+              </div>
+              <h5 class="prompt-card-title">Binary Search Mastery</h5>
+              <p class="prompt-card-snippet">Time complexity, recursive vs iterative, and avoiding integer overflow.</p>
+            </div>
+
+            <!-- Card 2: Resume ATS -->
+            <div class="prompt-card" data-cat="resume" onclick="launchPrompt('How do I review my resume to achieve a high ATS score? What are the key sections and keywords?')">
+              <div class="prompt-card-top">
+                <div class="prompt-card-icon p-icon-resume"><i class="bi bi-file-earmark-check"></i></div>
+                <i class="bi bi-arrow-up-right prompt-card-arrow"></i>
+              </div>
+              <h5 class="prompt-card-title">Resume Review &amp; ATS Score</h5>
+              <p class="prompt-card-snippet">Google XYZ formula, high-impact action verbs, and keyword alignment.</p>
+            </div>
+
+            <!-- Card 3: 7-Day Plan -->
+            <div class="prompt-card" data-cat="dsa" onclick="launchPrompt('Give me a 7-day placement preparation plan and study schedule for DSA, DBMS, and OS.')">
+              <div class="prompt-card-top">
+                <div class="prompt-card-icon p-icon-plan"><i class="bi bi-calendar2-week"></i></div>
+                <i class="bi bi-arrow-up-right prompt-card-arrow"></i>
+              </div>
+              <h5 class="prompt-card-title">Study Plans &amp; Schedules</h5>
+              <p class="prompt-card-snippet">Structured daily roadmaps covering core topics, practice tests, and revision.</p>
+            </div>
+
+            <!-- Card 4: Mock Interview -->
+            <div class="prompt-card" data-cat="interview" onclick="launchPrompt('Give me essential interview preparation tips for technical and HR rounds, including the STAR method.')">
+              <div class="prompt-card-top">
+                <div class="prompt-card-icon p-icon-interview"><i class="bi bi-mic"></i></div>
+                <i class="bi bi-arrow-up-right prompt-card-arrow"></i>
+              </div>
+              <h5 class="prompt-card-title">Interview Tips</h5>
+              <p class="prompt-card-snippet">Simulate live technical questions with feedback on complexity and edge cases.</p>
+            </div>
+
+            <!-- Card 5: Company Matrix -->
+            <div class="prompt-card" data-cat="company" onclick="launchPrompt('What are the typical interview rounds, eligibility criteria, and preparation strategies for top product and service companies?')">
+              <div class="prompt-card-top">
+                <div class="prompt-card-icon p-icon-company"><i class="bi bi-building"></i></div>
+                <i class="bi bi-arrow-up-right prompt-card-arrow"></i>
+              </div>
+              <h5 class="prompt-card-title">Companies</h5>
+              <p class="prompt-card-snippet">Eligibility criteria, online assessments, CTC packages, and interview stages.</p>
+            </div>
+
+            <!-- Card 6: Aptitude -->
+            <div class="prompt-card" data-cat="aptitude" onclick="launchPrompt('Give me five aptitude questions with answers and step-by-step explanations.')">
+              <div class="prompt-card-top">
+                <div class="prompt-card-icon p-icon-aptitude"><i class="bi bi-calculator"></i></div>
+                <i class="bi bi-arrow-up-right prompt-card-arrow"></i>
+              </div>
+              <h5 class="prompt-card-title">Aptitude</h5>
+              <p class="prompt-card-snippet">High-frequency screening test questions with shortcut solution formulas.</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Render Session Chat History if available -->
+        {% if history %}
+          {% for msg in history %}
+          <div class="msg-row {% if msg.role == 'user' %}user-row{% else %}ai-row{% endif %}">
+            <div class="msg-avatar">
+              {% if msg.role == 'user' %}{{ request.user.first_name|slice:":2"|upper|default:"U" }}{% else %}<i class="bi bi-stars"></i>{% endif %}
+            </div>
+            <div class="msg-content-wrapper">
+              <div class="msg-meta-header">
+                <strong>{% if msg.role == 'user' %}You{% else %}AI Placement Assistant{% endif %}</strong>
+                <span>&bull; {{ forloop.counter }}</span>
+              </div>
+              <div class="msg-bubble">{{ msg.content|linebreaksbr }}</div>
+              {% if msg.role != 'user' %}
+              <div class="msg-actions-toolbar">
+                <button class="msg-tool-btn" onclick="copyBubbleText(this)"><i class="bi bi-clipboard"></i> Copy</button>
+                <button class="msg-tool-btn" onclick="speakBubbleText(this)"><i class="bi bi-volume-up"></i> Listen</button>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% endif %}
+
+      </div>
+
+      <!-- ── COMMAND DOCK & INPUT BAR ── -->
+      <div class="ai-input-dock">
+
+        <!-- Uploaded File Badge -->
+        <div class="upload-preview-pill" id="uploadPill">
+          <i class="bi bi-file-earmark-text"></i>
+          <span id="uploadFileName">notes.pdf</span>
+          <span class="remove-file ms-2" onclick="removeAttachedFile()">&times;</span>
+        </div>
+
+        <!-- Fast Shortcut Chips Carousel -->
+        <div class="quick-prompt-chips">
+          <span class="dock-chip" onclick="launchPrompt('Give me a 7-day placement preparation plan and study schedule.')">
+            ⚡ Study Plans &amp; Schedules
+          </span>
+          <span class="dock-chip" onclick="launchPrompt('How do I review my resume to achieve a high ATS score? What are the key sections and keywords?')">
+            📄 Resume Review &amp; ATS Score
+          </span>
+          <span class="dock-chip" onclick="launchPrompt('Give me essential interview preparation tips for technical and HR rounds, including the STAR method.')">
+            🎯 Interview Tips
+          </span>
+          <span class="dock-chip" onclick="launchPrompt('What are the typical interview rounds, eligibility criteria, and preparation strategies for top product and service companies?')">
+            🏢 Companies
+          </span>
+          <span class="dock-chip" onclick="launchPrompt('Give me five aptitude questions with answers and step-by-step explanations.')">
+            🧠 Aptitude
+          </span>
+          <span class="dock-chip" onclick="launchPrompt('What are ACID properties in DBMS? Explain with real-world examples.')">
+            🗄️ DBMS ACID Properties
+          </span>
+        </div>
+
+        <!-- Hidden File Input for PDF/TXT Upload -->
+        <input type="file" id="notesFileInput" accept=".pdf,.txt,.doc,.docx" style="display:none" onchange="handleFileSelected(this)">
+
+        <!-- Main Dock Input -->
+        <div class="ai-dock-box">
+          <!-- Attach File Button -->
+          <button class="dock-action-btn" type="button" onclick="document.getElementById('notesFileInput').click()" title="Upload study notes or syllabus (PDF / TXT)">
+            <i class="bi bi-paperclip"></i>
+          </button>
+
+          <!-- Voice Mic Button -->
+          <button class="dock-action-btn" id="voiceMicBtn" type="button" onclick="toggleVoiceDictation()" title="Voice input (Speech to Text)">
+            <i class="bi bi-mic-fill"></i>
+          </button>
+
+          <!-- Input Textarea -->
+          <textarea id="aiQueryInput" class="ai-chat-input" placeholder="Ask AI Placement Assistant anything (e.g., Explain dynamic programming, evaluate resume, mock interview)..." rows="1"
+            onkeydown="handleKeySend(event)" oninput="autoGrowInput(this)"></textarea>
+
+          <!-- Send Action Button -->
+          <button class="ai-send-btn" id="aiSendBtn" type="button" onclick="submitMessage()" title="Send prompt (Enter)">
+            <i class="bi bi-arrow-up-short" style="font-size:24px"></i>
+          </button>
+        </div>
+
+        <div class="dock-hint-text">
+          <span><i class="bi bi-keyboard me-1"></i> Press <strong>Enter</strong> to send &bull; <strong>Shift+Enter</strong> for newline</span>
+          <span id="voiceStatusText" style="display:none; color:var(--ai-emerald)"><i class="bi bi-record-circle me-1"></i> Listening...</span>
+          <span>Powered by NVIDIA Nemotron AI</span>
+        </div>
+
+      </div>
+
+    </main>
+
   </div>
 </div>
 
+<!-- ========================================================================
+     CLIENT-SIDE INTERACTIVE ENGINE
+     ======================================================================== -->
 <script>
-const csrfToken = '{{ csrf_token }}';
-const userInitials = '{{ request.user.first_name|slice:":2"|upper|default:"U" }}';
-let currentMode = 'tutor';
+const CSRF_TOKEN = '{{ csrf_token }}';
+const USER_INITIALS = '{{ request.user.first_name|slice:":2"|upper|default:"U" }}';
+let selectedMode = 'tutor';
+let attachedFile = null;
+let isSubmitting = false;
+let isSpeaking = false;
+let recognition = null;
 
-function setMode(mode, el) {
-  currentMode = mode;
-  document.querySelectorAll('.mode-pill').forEach(p => p.classList.remove('active'));
-  const pill = document.getElementById('pill-' + mode);
-  if (pill) pill.classList.add('active');
-  if (el) {
-    document.querySelectorAll('.chat-sidebar .chat-topic').forEach(t => t.classList.remove('active'));
-    el.classList.add('active');
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+  scrollToBottom();
+
+  // Check URL query parameters (e.g. ?q=... or ?prompt=... from dashboard)
+  const params = new URLSearchParams(window.location.search);
+  const qParam = params.get('q') || params.get('prompt');
+  if (qParam) {
+    const input = document.getElementById('aiQueryInput');
+    if (input) {
+      input.value = qParam;
+      autoGrowInput(input);
+      submitMessage();
+    }
   }
+});
+
+/* --------------------------------------------------------------------------
+   Mode Switching
+   -------------------------------------------------------------------------- */
+function selectMode(mode) {
+  selectedMode = mode;
+  // Update sidebar cards
+  document.querySelectorAll('.ai-mode-card').forEach(c => c.classList.remove('active'));
+  const activeCard = document.getElementById('card-mode-' + mode);
+  if (activeCard) activeCard.classList.add('active');
+
+  // Update topbar pills
+  document.querySelectorAll('.mode-pill-btn').forEach(p => p.classList.remove('active'));
+  const activePill = document.getElementById('pill-' + mode);
+  if (activePill) activePill.classList.add('active');
 }
 
-function autoResize(el) {
+/* --------------------------------------------------------------------------
+   Card Category Filtering
+   -------------------------------------------------------------------------- */
+function filterCards(cat, chipEl) {
+  document.querySelectorAll('.prompt-cat-chip').forEach(c => c.classList.remove('active'));
+  if (chipEl) chipEl.classList.add('active');
+
+  const cards = document.querySelectorAll('.prompt-card');
+  cards.forEach(card => {
+    if (cat === 'all' || card.dataset.cat === cat) {
+      card.style.display = 'flex';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+
+/* --------------------------------------------------------------------------
+   Textarea Auto Growth & Keyboard Handling
+   -------------------------------------------------------------------------- */
+function autoGrowInput(el) {
   el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  el.style.height = Math.min(el.scrollHeight, 130) + 'px';
 }
 
-function handleKey(e) {
+function handleKeySend(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    sendMessage();
+    if (!isSubmitting) submitMessage();
   }
 }
 
-function useSuggestion(el) {
-  document.getElementById('chatInput').value = el.textContent.replace(/^.{2}/,'').trim();
-  document.getElementById('suggestions').style.display = 'none';
-  document.getElementById('chatInput').focus();
+function launchPrompt(text) {
+  const input = document.getElementById('aiQueryInput');
+  input.value = text;
+  autoGrowInput(input);
+  submitMessage();
 }
 
-function askTopic(text) {
-  document.getElementById('chatInput').value = text;
-  sendMessage();
+function startFreshChat() {
+  const stream = document.getElementById('chatStream');
+  const hero = document.getElementById('heroWelcome');
+  stream.innerHTML = '';
+  if (hero) {
+    hero.style.display = 'flex';
+    stream.appendChild(hero);
+  }
+  document.getElementById('aiQueryInput').value = '';
+  removeAttachedFile();
 }
 
-function formatResponse(text) {
-  text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (m, lang, code) =>
-    `<pre><code>${code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`);
-  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+/* --------------------------------------------------------------------------
+   File Attachment Handling
+   -------------------------------------------------------------------------- */
+function handleFileSelected(input) {
+  if (input.files && input.files[0]) {
+    attachedFile = input.files[0];
+    const pill = document.getElementById('uploadPill');
+    const nameSpan = document.getElementById('uploadFileName');
+    nameSpan.textContent = attachedFile.name + ` (${(attachedFile.size/1024).toFixed(1)} KB)`;
+    pill.style.display = 'inline-flex';
+  }
+}
+
+function removeAttachedFile() {
+  attachedFile = null;
+  const input = document.getElementById('notesFileInput');
+  if (input) input.value = '';
+  const pill = document.getElementById('uploadPill');
+  if (pill) pill.style.display = 'none';
+}
+
+/* --------------------------------------------------------------------------
+   Voice Dictation (Web Speech API)
+   -------------------------------------------------------------------------- */
+function toggleVoiceDictation() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("Speech recognition is not supported in this browser. Please try Chrome or Edge.");
+    return;
+  }
+
+  const micBtn = document.getElementById('voiceMicBtn');
+  const statusText = document.getElementById('voiceStatusText');
+
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+    micBtn.classList.remove('active-mic');
+    statusText.style.display = 'none';
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onstart = () => {
+    micBtn.classList.add('active-mic');
+    statusText.style.display = 'inline';
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    const input = document.getElementById('aiQueryInput');
+    input.value = input.value ? input.value + ' ' + transcript : transcript;
+    autoGrowInput(input);
+  };
+
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error:', event.error);
+    micBtn.classList.remove('active-mic');
+    statusText.style.display = 'none';
+    recognition = null;
+  };
+
+  recognition.onend = () => {
+    micBtn.classList.remove('active-mic');
+    statusText.style.display = 'none';
+    recognition = null;
+  };
+
+  recognition.start();
+}
+
+/* --------------------------------------------------------------------------
+   Markdown Formatter for AI Responses
+   -------------------------------------------------------------------------- */
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[m]));
+}
+
+function formatMarkdown(text) {
+  if (!text) return '';
+
+  // 1. Convert code blocks with copy bar
+  text = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
+    const langLabel = lang ? lang.toUpperCase() : 'CODE';
+    const cleanCode = escapeHtml(code.trim());
+    return `
+      <div class="code-box-container">
+        <div class="code-box-header">
+          <span class="code-lang-label">${langLabel}</span>
+          <button class="code-copy-btn" onclick="copyCodeSnippet(this)">
+            <i class="bi bi-clipboard"></i> Copy
+          </button>
+        </div>
+        <pre><code>${cleanCode}</code></pre>
+      </div>`;
+  });
+
+  // 2. Convert tables
+  text = text.replace(/(\|.+\|\n)+/g, (tableMatch) => {
+    const lines = tableMatch.trim().split('\n');
+    let html = '<table>';
+    let isHeader = true;
+    lines.forEach(line => {
+      if (line.includes('---')) {
+        isHeader = false;
+        return;
+      }
+      const cols = line.split('|').filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
+      html += '<tr>';
+      cols.forEach(col => {
+        const tag = isHeader ? 'th' : 'td';
+        html += `<${tag}>${col.trim()}</${tag}>`;
+      });
+      html += '</tr>';
+      isHeader = false;
+    });
+    html += '</table>';
+    return html;
+  });
+
+  // 3. Convert Headings (### and ####)
+  text = text.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+  text = text.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+
+  // 4. Convert bold & italics
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/\n/g, '<br>');
+  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+  // 5. Convert inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // 6. Convert bullet lists
+  text = text.replace(/^[•\-\*]\s+(.+)$/gm, '<li>$1</li>');
+  text = text.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+
+  // 7. Convert line breaks (avoiding breaks inside pre/table)
+  text = text.replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>');
+
   return text;
 }
 
+/* --------------------------------------------------------------------------
+   DOM Appenders
+   -------------------------------------------------------------------------- */
 function scrollToBottom() {
-  const msgs = document.getElementById('chatMessages');
-  msgs.scrollTop = msgs.scrollHeight;
+  const stream = document.getElementById('chatStream');
+  if (stream) stream.scrollTop = stream.scrollHeight;
 }
 
-function addMessage(role, content, isTyping = false) {
-  const msgs = document.getElementById('chatMessages');
-  const div = document.createElement('div');
-  div.className = `msg ${role === 'user' ? 'user-msg' : 'ai-msg'}`;
-  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-
-  if (isTyping) {
-    div.id = 'typingIndicator';
-    div.innerHTML = `
-      <div class="msg-avatar">&#129302;</div>
-      <div>
-        <div class="msg-bubble">
-          <div class="typing-indicator">
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-          </div>
-        </div>
-      </div>`;
-  } else {
-    const avatar = role === 'user' ? userInitials : '&#129302;';
-    const bubble = role === 'user' ? content : formatResponse(content);
-    div.innerHTML = `
-      <div class="msg-avatar">${avatar}</div>
-      <div>
-        <div class="msg-bubble">${bubble}</div>
-        <div class="msg-time">${now}</div>
-      </div>`;
-  }
-
-  msgs.appendChild(div);
+function appendUserBubble(text) {
+  const stream = document.getElementById('chatStream');
+  const row = document.createElement('div');
+  row.className = 'msg-row user-row';
+  row.innerHTML = `
+    <div class="msg-avatar">${USER_INITIALS}</div>
+    <div class="msg-content-wrapper">
+      <div class="msg-meta-header">
+        <strong>You</strong>
+        <span>Just now</span>
+      </div>
+      <div class="msg-bubble">${escapeHtml(text)}</div>
+    </div>`;
+  stream.appendChild(row);
   scrollToBottom();
-  return div;
 }
 
-async function sendMessage() {
-  const input = document.getElementById('chatInput');
-  const message = input.value.trim();
-  if (!message) return;
+function showTypingIndicator() {
+  const stream = document.getElementById('chatStream');
+  const row = document.createElement('div');
+  row.className = 'msg-row ai-row';
+  row.id = 'aiTypingIndicator';
+  row.innerHTML = `
+    <div class="msg-avatar"><i class="bi bi-stars"></i></div>
+    <div class="msg-content-wrapper">
+      <div class="msg-bubble">
+        <div class="ai-typing-indicator">
+          <div class="typing-dots">
+            <div class="t-dot"></div>
+            <div class="t-dot"></div>
+            <div class="t-dot"></div>
+          </div>
+          <span class="typing-label">AI Placement Assistant is reasoning and searching knowledge base...</span>
+        </div>
+      </div>
+    </div>`;
+  stream.appendChild(row);
+  scrollToBottom();
+}
 
-  addMessage('user', message.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+function removeTypingIndicator() {
+  const ind = document.getElementById('aiTypingIndicator');
+  if (ind) ind.remove();
+}
+
+function appendAIBubble(rawContent) {
+  removeTypingIndicator();
+  const stream = document.getElementById('chatStream');
+  const row = document.createElement('div');
+  row.className = 'msg-row ai-row';
+  const formatted = formatMarkdown(rawContent);
+
+  row.innerHTML = `
+    <div class="msg-avatar"><i class="bi bi-stars"></i></div>
+    <div class="msg-content-wrapper">
+      <div class="msg-meta-header">
+        <strong>AI Placement Assistant</strong>
+        <span class="badge bg-primary" style="font-size:10px">Nemotron AI</span>
+        <span>Just now</span>
+      </div>
+      <div class="msg-bubble">${formatted}</div>
+      <div class="msg-actions-toolbar">
+        <button class="msg-tool-btn" onclick="copyBubbleText(this)"><i class="bi bi-clipboard"></i> Copy</button>
+        <button class="msg-tool-btn" onclick="speakBubbleText(this)"><i class="bi bi-volume-up"></i> Listen</button>
+        <button class="msg-tool-btn" onclick="regeneratePrompt()"><i class="bi bi-arrow-clockwise"></i> Retry</button>
+      </div>
+    </div>`;
+
+  stream.appendChild(row);
+  scrollToBottom();
+}
+
+/* --------------------------------------------------------------------------
+   Message Submission
+   -------------------------------------------------------------------------- */
+let lastUserMessage = '';
+
+async function submitMessage() {
+  if (isSubmitting) return;
+
+  const input = document.getElementById('aiQueryInput');
+  const message = input.value.trim();
+
+  if (!message && !attachedFile) return;
+
+  lastUserMessage = message;
+
+  // Hide hero if visible
+  const hero = document.getElementById('heroWelcome');
+  if (hero) hero.style.display = 'none';
+
+  // Append user bubble
+  appendUserBubble(message || `[Attached: ${attachedFile.name}]`);
+
+  // Clear input
   input.value = '';
   input.style.height = 'auto';
 
-  document.getElementById('suggestions').style.display = 'none';
-  addMessage('ai', '', true);
-  document.getElementById('sendBtn').disabled = true;
+  // UI state
+  isSubmitting = true;
+  const sendBtn = document.getElementById('aiSendBtn');
+  sendBtn.disabled = true;
+  showTypingIndicator();
+
+  // Prepare payload
+  const formData = new FormData();
+  formData.append('message', message);
+  formData.append('mode', selectedMode);
+  if (attachedFile) {
+    formData.append('file', attachedFile);
+  }
 
   try {
-    const resp = await fetch('/chatbot/ask/', {
+    const response = await fetch('/chatbot/ask/', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken},
-      body: JSON.stringify({message: message, mode: currentMode})
+      headers: {
+        'X-CSRFToken': CSRF_TOKEN
+      },
+      body: formData
     });
-    const data = await resp.json();
 
-    const typing = document.getElementById('typingIndicator');
-    if (typing) typing.remove();
+    const data = await response.json();
 
-    if (data.success) {
-      addMessage('ai', data.response);
+    if (data.success && data.response) {
+      appendAIBubble(data.response);
     } else {
-      addMessage('ai', data.response || 'AI service is temporarily unavailable. Please try again.');
+      appendAIBubble(data.response || "AI service is temporarily unavailable. Please try again.");
     }
   } catch (err) {
-    const typing = document.getElementById('typingIndicator');
-    if (typing) typing.remove();
-    addMessage('ai', 'AI service is temporarily unavailable. Please try again.');
+    console.error('Network error calling ask_ai:', err);
+    appendAIBubble("AI service is temporarily unavailable. Please check your connection.");
   } finally {
-    document.getElementById('sendBtn').disabled = false;
+    isSubmitting = false;
+    sendBtn.disabled = false;
+    removeAttachedFile();
     input.focus();
+    scrollToBottom();
   }
 }
 
-async function clearChat() {
-  if (!confirm('Clear conversation history?')) return;
-  await fetch('/chatbot/clear/', {method:'POST', headers:{'X-CSRFToken': csrfToken}});
-  const msgs = document.getElementById('chatMessages');
-  while (msgs.children.length > 1) msgs.removeChild(msgs.lastChild);
-  document.getElementById('suggestions').style.display = 'flex';
+function regeneratePrompt() {
+  if (lastUserMessage) {
+    launchPrompt(lastUserMessage);
+  }
 }
 
-scrollToBottom();
+/* --------------------------------------------------------------------------
+   Copy, Speech Synthesis & Export Tools
+   -------------------------------------------------------------------------- */
+function copyCodeSnippet(btn) {
+  const pre = btn.closest('.code-box-container').querySelector('pre code');
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    const original = btn.innerHTML;
+    btn.innerHTML = `<i class="bi bi-check2"></i> Copied!`;
+    setTimeout(() => { btn.innerHTML = original; }, 1800);
+  });
+}
+
+function copyBubbleText(btn) {
+  const bubble = btn.closest('.msg-content-wrapper').querySelector('.msg-bubble');
+  if (!bubble) return;
+  navigator.clipboard.writeText(bubble.innerText).then(() => {
+    const original = btn.innerHTML;
+    btn.innerHTML = `<i class="bi bi-check2"></i> Copied!`;
+    setTimeout(() => { btn.innerHTML = original; }, 1800);
+  });
+}
+
+function speakBubbleText(btn) {
+  if (!('speechSynthesis' in window)) {
+    alert("Text to speech is not supported in this browser.");
+    return;
+  }
+
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    btn.innerHTML = `<i class="bi bi-volume-up"></i> Listen`;
+    return;
+  }
+
+  const bubble = btn.closest('.msg-content-wrapper').querySelector('.msg-bubble');
+  if (!bubble) return;
+
+  const utterance = new SpeechSynthesisUtterance(bubble.innerText);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+
+  btn.innerHTML = `<i class="bi bi-stop-circle text-danger"></i> Stop`;
+
+  utterance.onend = () => {
+    btn.innerHTML = `<i class="bi bi-volume-up"></i> Listen`;
+  };
+
+  utterance.onerror = () => {
+    btn.innerHTML = `<i class="bi bi-volume-up"></i> Listen`;
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function exportChat() {
+  const stream = document.getElementById('chatStream');
+  const messages = stream.querySelectorAll('.msg-row');
+  if (!messages.length) {
+    alert("No active conversation to export.");
+    return;
+  }
+
+  let textContent = `# AI Placement Assistant Session Export\nDate: ${new Date().toLocaleString()}\n\n`;
+  messages.forEach(row => {
+    const isUser = row.classList.contains('user-row');
+    const sender = isUser ? 'User' : 'AI Placement Assistant';
+    const bubble = row.querySelector('.msg-bubble');
+    if (bubble) {
+      textContent += `### ${sender}:\n${bubble.innerText}\n\n---\n\n`;
+    }
+  });
+
+  const blob = new Blob([textContent], {type: 'text/markdown'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `PlacementPro_Chat_${Date.now()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function clearChat() {
+  if (!confirm("Are you sure you want to clear this conversation?")) return;
+  try {
+    await fetch('/chatbot/clear/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF_TOKEN }
+    });
+    startFreshChat();
+  } catch (e) {
+    console.error("Error clearing chat:", e);
+    startFreshChat();
+  }
+}
 </script>
 {% endblock %}

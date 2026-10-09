@@ -10,4 +10,6 @@ urlpatterns = [
     path('contact/', views.contact, name='contact'),
     path('faq/', views.faq, name='faq'),
     path('features/', views.features, name='features'),
+    path('concept-note/', views.concept_note, name='concept_note'),
+    path('switch-role/<str:role>/', views.switch_role, name='switch_role'),
 ]

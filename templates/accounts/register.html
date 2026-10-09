@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Create Account — PlacementPro{% endblock %}
-{% block meta_description %}Join PlacementPro free and start your AI-powered placement journey.{% endblock %}
+{% block title %}Create Account — PlacementPro AI Portal{% endblock %}
+{% block meta_description %}Join PlacementPro free and start your AI-powered placement journey with instant access.{% endblock %}
 {% block body_class %}auth-body{% endblock %}
 
 {% block full_page %}
@@ -14,21 +14,26 @@
         <div class="auth-logo-icon">&#127891;</div>
         <span>PlacementPro</span>
       </a>
+
+      <div class="ai-live-badge">
+        <span class="ai-pulse-dot"></span>
+        <span>Instant Registration &bull; Zero OTP Delay</span>
+      </div>
+
       <h2 class="auth-tagline">Your AI-Powered<br><span>Career Copilot</span></h2>
-      <p class="auth-desc">Join thousands of B.Tech students who cracked dream placements using AI-powered study plans, mock interviews, and skill gap analysis.</p>
+      <p class="auth-desc">Join engineering students who accelerated their campus placement prep with AI study roadmaps, real-time mock interviews, and ATS scoring.</p>
 
       <div class="auth-features">
-        <div class="auth-feature"><span class="af-icon">&#129302;</span><span>AI Study Planner</span></div>
-        <div class="auth-feature"><span class="af-icon">&#128200;</span><span>Skill Gap Analysis</span></div>
-        <div class="auth-feature"><span class="af-icon">&#127919;</span><span>Placement Readiness Score</span></div>
-        <div class="auth-feature"><span class="af-icon">&#128221;</span><span>ATS Resume Analyzer</span></div>
-        <div class="auth-feature"><span class="af-icon">&#128188;</span><span>AI Mock Interviews</span></div>
+        <div class="auth-feature"><span class="af-icon">&#129302;</span><span>AI Placement Copilot & Chatbot</span></div>
+        <div class="auth-feature"><span class="af-icon">&#128200;</span><span>Skill Gap Analysis & Benchmark</span></div>
+        <div class="auth-feature"><span class="af-icon">&#127919;</span><span>Placement Readiness Scoring</span></div>
+        <div class="auth-feature"><span class="af-icon">&#128221;</span><span>ATS Resume Optimization</span></div>
       </div>
 
       <div class="auth-stats-row">
         <div class="auth-stat"><strong>500+</strong><small>Students</small></div>
         <div class="auth-stat"><strong>85%</strong><small>Placement Rate</small></div>
-        <div class="auth-stat"><strong>Free</strong><small>For Students</small></div>
+        <div class="auth-stat"><strong>Free</strong><small>Forever Access</small></div>
       </div>
     </div>
   </div>
@@ -37,19 +42,20 @@
   <div class="auth-right">
     <div class="auth-form-box">
       <div class="auth-form-header">
+        <div class="badge-tag">&#9889; Instant Direct Onboarding</div>
         <h1>Create Your Account</h1>
-        <p>Start your placement journey today &mdash; completely free</p>
+        <p>No waiting for email OTPs &mdash; enter your details and access your dashboard directly.</p>
       </div>
 
       <!-- Role Toggle -->
       <div class="auth-role-toggle mb-4">
         <a href="{% url 'accounts:register_student' %}"
            class="role-btn {% if role == 'student' %}active{% endif %}">
-          <i class="bi bi-mortarboard-fill"></i> Student
+          <i class="bi bi-mortarboard-fill me-1"></i> Student
         </a>
         <a href="{% url 'accounts:register_faculty' %}"
            class="role-btn {% if role == 'faculty' %}active{% endif %}">
-          <i class="bi bi-person-badge-fill"></i> Faculty
+          <i class="bi bi-person-badge-fill me-1"></i> Faculty
         </a>
       </div>
 
@@ -57,7 +63,8 @@
       {% if messages %}
         {% for message in messages %}
         <div class="alert-custom alert-{{ message.tags }}">
-          <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+          <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'danger' or message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %}-fill me-2"></i>
+          <div>{{ message }}</div>
           <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
         </div>
         {% endfor %}
@@ -197,15 +204,15 @@
         <!-- Terms -->
         <div class="terms-row">
           <label class="chk-label">
-            <input type="checkbox" name="terms_accepted" id="id_terms" required>
+            <input type="checkbox" name="terms_accepted" id="id_terms" required checked>
             I agree to the <a href="#" class="alink">Terms of Service</a> and <a href="#" class="alink">Privacy Policy</a>
           </label>
           {% if form.terms_accepted.errors %}<span class="field-err">{{ form.terms_accepted.errors.0 }}</span>{% endif %}
         </div>
 
         <button type="submit" class="btn-submit" id="submitBtn">
-          <span class="btn-txt"><i class="bi bi-person-plus-fill me-2"></i>Create Free Account</span>
-          <span class="btn-load d-none"><span class="spin"></span> Creating account...</span>
+          <span class="btn-txt"><i class="bi bi-rocket-takeoff-fill me-2"></i>Create Account & Enter Dashboard</span>
+          <span class="btn-load d-none"><span class="spin"></span> Launching Dashboard...</span>
         </button>
       </form>
 
@@ -215,68 +222,79 @@
 </div>
 
 <style>
-.auth-body{margin:0;padding:0;overflow:hidden}
+.auth-body{margin:0;padding:0;min-height:100vh;background:#f8fafc;color:#0f172a}
 .auth-page{display:flex;min-height:100vh;font-family:'Inter',system-ui,sans-serif}
-.auth-left{width:420px;min-width:360px;background:linear-gradient(145deg,#0f172a,#1e1b4b,#312e81);display:flex;align-items:center;justify-content:center;padding:40px;position:relative;overflow:hidden}
-.auth-left::before{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(99,102,241,.15);top:-80px;right:-80px}
-.auth-left::after{content:'';position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(139,92,246,.1);bottom:-50px;left:-50px}
-.auth-left-inner{position:relative;z-index:1}
-.auth-logo{display:flex;align-items:center;gap:10px;text-decoration:none;margin-bottom:36px}
-.auth-logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
-.auth-logo span{font-size:20px;font-weight:800;color:#fff}
-.auth-tagline{font-size:30px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:14px}
-.auth-tagline span{background:linear-gradient(90deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.auth-desc{color:rgba(255,255,255,.65);font-size:14px;line-height:1.6;margin-bottom:28px}
-.auth-features{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
-.auth-feature{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.85);font-size:13px;font-weight:500}
-.af-icon{width:30px;height:30px;min-width:30px;background:rgba(255,255,255,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.auth-left{width:430px;min-width:360px;background:linear-gradient(150deg,#0a0f1d 0%,#0f172a 40%,#1e1b4b 100%);display:flex;align-items:center;justify-content:center;padding:44px 36px;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.25),transparent 70%);top:-80px;right:-80px;pointer-events:none}
+.auth-left::after{content:'';position:absolute;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(168,85,247,.2),transparent 70%);bottom:-60px;left:-60px;pointer-events:none}
+.auth-left-inner{position:relative;z-index:2;width:100%}
+.auth-logo{display:flex;align-items:center;gap:12px;text-decoration:none;margin-bottom:28px}
+.auth-logo-icon{width:46px;height:46px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 24px rgba(99,102,241,.4)}
+.auth-logo span{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.ai-live-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.4);border-radius:999px;color:#c7d2fe;font-size:12px;font-weight:600;margin-bottom:20px}
+.ai-pulse-dot{width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 10px #10b981;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.2)}}
+.auth-tagline{font-size:36px;font-weight:900;color:#fff;line-height:1.15;margin-bottom:14px;letter-spacing:-.5px}
+.auth-tagline span{background:linear-gradient(90deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.auth-desc{color:rgba(255,255,255,.7);font-size:14px;line-height:1.65;margin-bottom:28px}
+.auth-features{display:flex;flex-direction:column;gap:12px;margin-bottom:30px}
+.auth-feature{display:flex;align-items:center;gap:12px;color:rgba(255,255,255,.88);font-size:13.5px;font-weight:500}
+.af-icon{width:32px;height:32px;min-width:32px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px}
 .auth-stats-row{display:flex;gap:20px}
 .auth-stat{text-align:center}
-.auth-stat strong{display:block;font-size:20px;font-weight:800;color:#fff}
-.auth-stat small{font-size:11px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px}
-.auth-right{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:30px 20px;background:#f8fafc;overflow-y:auto}
-.auth-form-box{width:100%;max-width:520px;background:#fff;border-radius:24px;padding:36px;box-shadow:0 4px 40px rgba(0,0,0,.08);margin:auto 0}
+.auth-stat strong{display:block;font-size:22px;font-weight:800;color:#fff}
+.auth-stat small{font-size:11px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px}
+
+/* Right Side */
+.auth-right{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px;background:#f8fafc;overflow-y:auto}
+.auth-form-box{width:100%;max-width:520px;background:#fff;border-radius:24px;padding:36px;box-shadow:0 10px 40px rgba(15,23,42,.06),0 1px 3px rgba(15,23,42,.04);border:1px solid #e2e8f0;margin:auto 0}
+.badge-tag{display:inline-block;padding:4px 10px;background:#eef2ff;color:#6366f1;border-radius:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
 .auth-form-header{margin-bottom:22px}
-.auth-form-header h1{font-size:24px;font-weight:800;color:#0f172a;margin:0 0 4px}
-.auth-form-header p{color:#64748b;font-size:14px;margin:0}
+.auth-form-header h1{font-size:26px;font-weight:800;color:#0f172a;margin:0 0 6px;letter-spacing:-.4px}
+.auth-form-header p{color:#64748b;font-size:14px;margin:0;line-height:1.5}
 .auth-role-toggle{display:flex;gap:6px;background:#f1f5f9;border-radius:12px;padding:4px}
-.role-btn{flex:1;text-align:center;padding:8px;border-radius:9px;font-size:13px;font-weight:600;color:#64748b;text-decoration:none;transition:all .2s}
+.role-btn{flex:1;text-align:center;padding:9px;border-radius:9px;font-size:13px;font-weight:700;color:#64748b;text-decoration:none;transition:all .2s}
 .role-btn.active{background:#fff;color:#6366f1;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .form-field-group{margin-bottom:14px}
-.form-field-group label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;letter-spacing:.3px;text-transform:uppercase}
+.form-field-group label{display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:5px;letter-spacing:.3px;text-transform:uppercase}
 .req{color:#ef4444}
-.opt{color:#9ca3af;font-weight:400;text-transform:none;font-size:11px}
+.opt{color:#94a3af;font-weight:400;text-transform:none;font-size:11px}
 .input-wrap{position:relative}
-.field-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:14px;z-index:1;pointer-events:none}
-.form-input{width:100%;padding:10px 12px 10px 36px;font-size:14px;border:1.5px solid #e2e8f0;border-radius:10px;outline:none;transition:border-color .2s,box-shadow .2s;background:#fff;color:#0f172a;-webkit-appearance:none;appearance:none;box-sizing:border-box}
-.form-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.field-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:15px;z-index:1;pointer-events:none}
+.form-input{width:100%;padding:10px 14px 10px 38px;font-size:14px;border:1.5px solid #cbd5e1;border-radius:12px;outline:none;transition:border-color .2s,box-shadow .2s;background:#fff;color:#0f172a;-webkit-appearance:none;appearance:none;box-sizing:border-box}
+.form-input:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.12)}
 .form-input.is-error{border-color:#ef4444;background:#fff5f5}
-.select-wrap::after{content:'';position:absolute;right:11px;top:50%;transform:translateY(-50%);border:4px solid transparent;border-top-color:#6b7280;pointer-events:none}
-.field-err{display:block;color:#ef4444;font-size:11px;margin-top:3px}
-.pwd-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9ca3af;cursor:pointer;padding:2px 6px;font-size:14px}
+.select-wrap::after{content:'';position:absolute;right:13px;top:50%;transform:translateY(-50%);border:4px solid transparent;border-top-color:#64748b;pointer-events:none}
+.field-err{display:block;color:#ef4444;font-size:11.5px;margin-top:4px}
+.pwd-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px 8px;font-size:15px}
 .pwd-eye:hover{color:#6366f1}
-.strength-bar{height:3px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:5px}
+.strength-bar{height:4px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-top:6px}
 .strength-fill{height:100%;width:0;border-radius:4px;transition:all .3s}
-.strength-txt{font-size:11px;color:#64748b}
+.strength-txt{font-size:11px;color:#64748b;display:block;margin-top:2px}
 .match-msg{font-size:11px;display:block;margin-top:3px}
-.terms-row{margin-bottom:18px}
-.chk-label{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#374151;cursor:pointer;line-height:1.5}
-.chk-label input[type=checkbox]{margin-top:2px;accent-color:#6366f1}
+.terms-row{margin:16px 0}
+.chk-label{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#475569;cursor:pointer;line-height:1.5}
+.chk-label input[type=checkbox]{margin-top:3px;accent-color:#6366f1}
 .alink{color:#6366f1;text-decoration:none;font-weight:600}
 .alink:hover{text-decoration:underline}
-.btn-submit{width:100%;padding:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .25s;margin-top:4px}
-.btn-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(99,102,241,.4)}
+.btn-submit{width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .25s;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+.btn-submit:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(99,102,241,.45)}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.switch-txt{text-align:center;margin-top:18px;font-size:13px;color:#64748b}
-.alert-custom{display:flex;align-items:center;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;position:relative}
+.switch-txt{text-align:center;margin-top:20px;font-size:13px;color:#64748b}
+.alert-custom{display:flex;align-items:flex-start;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-bottom:18px;position:relative}
 .alert-success{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
-.alert-danger{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.alert-danger,.alert-error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
 .alert-info{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe}
-.alert-close{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;opacity:.6}
-@media(max-width:900px){.auth-left{display:none}}
-@media(max-width:480px){.auth-form-box{padding:24px 16px;border-radius:16px}.form-row-2{grid-template-columns:1fr}}
+.alert-close{position:absolute;right:10px;top:10px;background:none;border:none;font-size:18px;cursor:pointer;opacity:.6}
+
+@media(max-width:900px){
+  .auth-left{display:none}
+  .auth-right{padding:24px 16px}
+  .auth-form-box{padding:24px 18px;border-radius:18px}
+  .form-row-2{grid-template-columns:1fr}
+}
 </style>
 
 <script>
@@ -296,8 +314,8 @@ function checkStrength(v){
 function checkMatch(){
   const p1=document.getElementById("id_password1").value,p2=document.getElementById("id_password2").value,m=document.getElementById("mMsg");
   if(!p2){m.textContent="";return;}
-  if(p1===p2){m.textContent="Passwords match";m.style.color="#10b981";}
-  else{m.textContent="Passwords do not match";m.style.color="#ef4444";}
+  if(p1===p2){m.textContent="✓ Passwords match";m.style.color="#10b981";}
+  else{m.textContent="✗ Passwords do not match";m.style.color="#ef4444";}
 }
 document.getElementById("registerForm").addEventListener("submit",function(){
   document.querySelector(".btn-txt").classList.add("d-none");

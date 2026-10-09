@@ -46,6 +46,8 @@ class StudySubject(models.Model):
     difficulty_level = models.IntegerField(default=3, help_text='1-5 scale')
     color = models.CharField(max_length=20, default='#6366f1')
     completion_percentage = models.IntegerField(default=0)
+    syllabus_file = models.FileField(upload_to='syllabi/', null=True, blank=True)
+    syllabus_text = models.TextField(blank=True, help_text='Extracted or pasted syllabus content for AI queries')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

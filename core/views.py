@@ -124,3 +124,36 @@ def contact(request):
         return redirect('core:contact')
 
     return render(request, 'core/contact.html')
+
+
+def switch_role(request, role):
+    """Instant role switcher for demonstration and frictionless testing."""
+    from accounts.models import User
+    from django.contrib.auth import login
+
+    role = role.lower()
+    user = None
+    target_url = '/dashboard/'
+
+    if role == 'admin':
+        user = User.objects.filter(email='11231@gmail.com').first() or \
+               User.objects.filter(username='11231@gmail.com').first() or \
+               User.objects.filter(username='11231').first() or \
+               User.objects.filter(role='admin').first()
+        target_url = '/dashboard/admin/'
+    else:
+        user = User.objects.filter(username='student1').first() or \
+               User.objects.filter(role='student').first()
+        target_url = '/dashboard/'
+
+    if user:
+        request.session['active_role'] = role
+        login(request, user, backend='accounts.backends.MultiIdentifierBackend')
+        messages.success(request, f'⚡ Switched to {role.capitalize()} view ({user.get_full_name() or user.username})')
+
+    return redirect(target_url)
+
+
+def concept_note(request):
+    """Client-facing Concept Note and Comprehensive Project Documentation with Print-to-PDF."""
+    return render(request, 'core/concept_note.html')

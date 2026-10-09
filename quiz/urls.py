@@ -16,4 +16,5 @@ urlpatterns = [
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('bookmarks/', views.bookmarks, name='bookmarks'),
     path('bookmark/<int:question_id>/', views.toggle_bookmark, name='toggle_bookmark'),
+    path('generate-ai-test/', views.generate_ai_test, name='generate_ai_test'),
 ]

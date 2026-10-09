@@ -3,7 +3,149 @@
 {% load humanize %}
 {% block title %}Dashboard — PlacementPro{% endblock %}
 {% block page_title %}Student Dashboard{% endblock %}
-{% block breadcrumb %}Home / Dashboard{% endblock %}
+{% block extra_css %}
+<style>
+.ai-dash-banner {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.06) 50%, rgba(6, 182, 212, 0.06) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 20px;
+  padding: 22px 26px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.06);
+}
+.ai-dash-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+.ai-dash-banner-content {
+  flex: 1;
+}
+.ai-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+.ai-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulseBeacon 2s infinite;
+}
+.ai-dash-banner-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 4px;
+  letter-spacing: -0.3px;
+}
+.ai-dash-banner-desc {
+  font-size: 13.5px;
+  color: var(--text-muted, #64748b);
+  margin: 0 0 14px;
+}
+.ai-dash-prompt-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid rgba(99, 102, 241, 0.3);
+  border-radius: 14px;
+  padding: 6px 8px 6px 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s;
+  max-width: 720px;
+}
+.ai-dash-prompt-bar:focus-within {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+.ai-dash-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text-primary, #0f172a);
+  font-family: inherit;
+}
+.ai-dash-launch-btn {
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+.ai-dash-launch-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+.ai-dash-prompt-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ai-prompt-pill {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 4px 12px;
+  border-radius: 100px;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ai-prompt-pill:hover {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: #6366f1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+}
+.ai-floating-orb {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #a855f7, #6366f1, #06b6d4);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 30px;
+  animation: floatOrb 3.5s ease-in-out infinite;
+}
+@keyframes floatOrb {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="dash-page">
@@ -33,6 +175,59 @@
       <a href="{% url 'chatbot:chat' %}" class="dash-btn-primary">
         <i class="bi bi-robot"></i> Ask AI
       </a>
+    </div>
+  </div>
+
+  <!-- ═══ AI Neural Copilot Quick Launch Banner ═══ -->
+  <div class="ai-dash-banner mb-4">
+    <div class="ai-dash-banner-inner">
+      <div class="ai-dash-banner-content">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="ai-badge-live">
+            <span class="ai-pulse-dot"></span> NVIDIA Nemotron AI Online
+          </span>
+          <span class="text-muted small">&bull; PlacementPro Copilot v3.5</span>
+        </div>
+        <h3 class="ai-dash-banner-title">
+          Ask your 24/7 AI Placement Copilot
+        </h3>
+        <p class="ai-dash-banner-desc">
+          Instant answers on DSA algorithms, ATS resume checks, mock interviews, and tailored study schedules.
+        </p>
+
+        <!-- Quick Search Bar -->
+        <form action="{% url 'chatbot:chat' %}" method="get" class="ai-dash-prompt-bar">
+          <i class="bi bi-robot text-primary ms-2" style="font-size:18px"></i>
+          <input type="text" name="q" class="ai-dash-input" placeholder="Ask AI: e.g. Explain Binary Search, review my resume, or generate a 7-day study plan...">
+          <button type="submit" class="ai-dash-launch-btn">
+            <span>Ask AI</span> <i class="bi bi-arrow-right"></i>
+          </button>
+        </form>
+
+        <!-- Quick 1-Click Prompt Pills -->
+        <div class="ai-dash-prompt-pills mt-3">
+          <a href="{% url 'chatbot:chat' %}?q=Give+me+a+7-day+intensive+placement+preparation+plan+and+study+schedule." class="ai-prompt-pill">
+            ⚡ 7-Day Sprint Plan
+          </a>
+          <a href="{% url 'chatbot:chat' %}?q=How+do+I+optimize+my+resume+for+an+85%2B+ATS+score%3F" class="ai-prompt-pill">
+            📄 Resume ATS Check
+          </a>
+          <a href="{% url 'chatbot:chat' %}?q=Simulate+a+technical+interview+question+for+a+Software+Engineer+role." class="ai-prompt-pill">
+            🎯 Mock Interview
+          </a>
+          <a href="{% url 'chatbot:chat' %}?q=What+are+the+common+interview+rounds+in+TCS%2C+Infosys%2C+and+Amazon%3F" class="ai-prompt-pill">
+            🏢 Company Rounds
+          </a>
+          <a href="{% url 'chatbot:chat' %}?q=Give+me+5+quantitative+aptitude+questions+with+step-by-step+solutions." class="ai-prompt-pill">
+            🧠 Aptitude Questions
+          </a>
+        </div>
+      </div>
+      <div class="ai-dash-banner-visual d-none d-lg-flex">
+        <div class="ai-floating-orb">
+          <i class="bi bi-stars"></i>
+        </div>
+      </div>
     </div>
   </div>
 

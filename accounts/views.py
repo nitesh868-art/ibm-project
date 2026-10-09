@@ -16,7 +16,7 @@ from .forms import (StudentRegistrationForm, FacultyRegistrationForm,
 
 
 def register_student(request):
-    """Student registration view with OTP email verification."""
+    """Student registration view with direct login — zero OTP friction."""
     if request.user.is_authenticated:
         return redirect('dashboard:home')
 
@@ -24,11 +24,13 @@ def register_student(request):
         form = StudentRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = True  # Active; email verification is optional flow
+            user.is_active = True
+            user.is_email_verified = True  # Fully verified immediately
+            user.email_otp = ''
             user.save()
 
-            # Create student profile ONCE — here, using get_or_create to be safe
-            roll_number = form.cleaned_data.get('roll_number')  # None if blank
+            # Create student profile
+            roll_number = form.cleaned_data.get('roll_number')
             StudentProfile.objects.get_or_create(
                 user=user,
                 defaults={
@@ -39,18 +41,11 @@ def register_student(request):
                 }
             )
 
-            # Generate and send OTP (non-blocking)
-            otp = user.generate_otp()
-            _send_otp_email(user.email, user.first_name, otp)
-
-            # Store user ID in session for OTP verification
-            request.session['verify_user_id'] = user.id
-
-            messages.success(request, f'✅ Account created! We sent a 6-digit OTP to {user.email}. '
-                                       f'(If email is not configured, you can still log in directly.)')
-            return redirect('accounts:verify_otp')
+            # Log the user in directly!
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f'🎉 Welcome to PlacementPro, {user.first_name}! Your account is ready.')
+            return redirect('dashboard:home')
         else:
-            # Show a top-level error summary
             messages.error(request, 'Please fix the errors highlighted below.')
     else:
         form = StudentRegistrationForm()
@@ -58,21 +53,32 @@ def register_student(request):
     return render(request, 'accounts/register.html', {'form': form, 'role': 'student'})
 
 
-
 def register_faculty(request):
-    """Faculty registration view."""
+    """Faculty registration view with direct login."""
     if request.user.is_authenticated:
-        return redirect('dashboard:home')
+        return redirect('dashboard:faculty')
 
     if request.method == 'POST':
         form = FacultyRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            otp = user.generate_otp()
-            _send_otp_email(user.email, user.first_name, otp)
-            request.session['verify_user_id'] = user.id
-            messages.success(request, f'Faculty account created! OTP sent to {user.email}')
-            return redirect('accounts:verify_otp')
+            user = form.save(commit=False)
+            user.is_active = True
+            user.is_email_verified = True
+            user.role = 'faculty'
+            user.save()
+
+            FacultyProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'department': form.cleaned_data.get('department', ''),
+                    'designation': form.cleaned_data.get('designation', ''),
+                    'employee_id': form.cleaned_data.get('employee_id', ''),
+                }
+            )
+
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f'🎉 Welcome, Professor {user.first_name}! Faculty account created.')
+            return redirect('dashboard:faculty')
     else:
         form = FacultyRegistrationForm()
 
@@ -80,95 +86,148 @@ def register_faculty(request):
 
 
 def verify_otp(request):
-    """Email OTP verification view."""
-    user_id = request.session.get('verify_user_id')
-    if not user_id:
-        return redirect('accounts:login')
-
-    user = get_object_or_404(User, id=user_id)
-
-    # Allow skipping OTP in development / when email not configured
-    if request.GET.get('skip') == '1':
-        user.is_email_verified = True
-        user.save()
-        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        if 'verify_user_id' in request.session:
-            del request.session['verify_user_id']
-        messages.info(request, '👋 Welcome! Email verification skipped (development mode).')
+    """Bypasses OTP verification and logs in directly if pending, or redirects to dashboard."""
+    if request.user.is_authenticated:
         return redirect('dashboard:home')
 
-    if request.method == 'POST':
-        form = OTPVerificationForm(request.POST)
-        if form.is_valid():
-            otp = form.cleaned_data['otp']
-            if user.is_otp_valid(otp):
-                user.is_email_verified = True
-                user.email_otp = ''
-                user.save()
-                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+    user_id = request.session.get('verify_user_id')
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+            user.is_email_verified = True
+            user.is_active = True
+            user.email_otp = ''
+            user.save()
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            if 'verify_user_id' in request.session:
                 del request.session['verify_user_id']
-                messages.success(request, '✅ Email verified successfully! Welcome aboard!')
-                return redirect('dashboard:home')
-            else:
-                messages.error(request, '❌ Invalid or expired OTP. Please try again.')
-    else:
-        form = OTPVerificationForm()
+            messages.success(request, f'Welcome, {user.first_name}! Logged in successfully.')
+            return redirect('dashboard:home')
+        except User.DoesNotExist:
+            pass
 
-    return render(request, 'accounts/verify_otp.html', {'form': form, 'email': user.email})
+    return redirect('accounts:login')
 
 
 def resend_otp(request):
-    """Resend OTP to user's email."""
-    user_id = request.session.get('verify_user_id')
-    if not user_id:
-        return redirect('accounts:login')
-
-    user = get_object_or_404(User, id=user_id)
-    otp = user.generate_otp()
-    _send_otp_email(user.email, user.first_name, otp)
-    messages.success(request, f'New OTP sent to {user.email}')
-    return redirect('accounts:verify_otp')
+    """Redirects to login/dashboard directly."""
+    if request.user.is_authenticated:
+        return redirect('dashboard:home')
+    return redirect('accounts:login')
 
 
 def user_login(request):
-    """Login view with remember me functionality."""
+    """Login view — supports username OR email OR roll number with case-insensitivity."""
     if request.user.is_authenticated:
         return redirect('dashboard:home')
 
     if request.method == 'POST':
-        form = CustomLoginForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            remember_me = form.cleaned_data.get('remember_me')
+        login_input = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        remember_me = request.POST.get('remember_me', '') == 'on'
 
-            user = authenticate(request, username=username, password=password)
-            if user:
-                # Ensure student profile exists (safety net)
+        user = None
+
+        if login_input and password:
+            # 1) Direct username match
+            user = authenticate(request, username=login_input, password=password)
+
+            # 2) Case-insensitive username match
+            if user is None:
+                matched_user = User.objects.filter(username__iexact=login_input).first()
+                if matched_user:
+                    user = authenticate(request, username=matched_user.username, password=password)
+
+            # 3) Case-insensitive email match
+            if user is None:
+                matched_user = User.objects.filter(email__iexact=login_input).first()
+                if matched_user:
+                    user = authenticate(request, username=matched_user.username, password=password)
+
+            # 4) Roll number match (via StudentProfile)
+            if user is None:
+                student_prof = StudentProfile.objects.filter(roll_number__iexact=login_input).select_related('user').first()
+                if student_prof and student_prof.user:
+                    user = authenticate(request, username=student_prof.user.username, password=password)
+
+        if user is not None:
+            if not user.is_active:
+                messages.error(request, '❌ Your account is currently disabled. Please contact support.')
+            else:
+                # Ensure student profile exists
                 if user.role == 'student':
                     StudentProfile.objects.get_or_create(user=user)
 
                 login(request, user)
-                # Set session expiry based on remember_me
                 if not remember_me:
-                    request.session.set_expiry(0)  # Browser close
+                    request.session.set_expiry(0)
                 else:
                     request.session.set_expiry(1209600)  # 2 weeks
 
                 messages.success(request, f'Welcome back, {user.first_name or user.username}! 👋')
-                next_url = request.GET.get('next', '')
+                next_url = request.GET.get('next', '').strip()
                 if next_url and not next_url.startswith('/'):
-                    # Safety: ignore non-path next values
                     next_url = ''
-                return redirect(next_url or 'dashboard:home')
-            else:
-                messages.error(request, '❌ Invalid username or password. Please try again.')
+
+                if not next_url:
+                    if user.role == 'admin' or user.is_staff or user.is_superuser:
+                        next_url = '/dashboard/admin/'
+                    else:
+                        next_url = '/dashboard/'
+                return redirect(next_url)
         else:
-            messages.error(request, 'Please check your credentials.')
+            messages.error(request, '❌ Invalid credentials. Check your username/email/roll number and password, or use 1-click Demo login below.')
+
+        form = CustomLoginForm(request)
     else:
         form = CustomLoginForm(request)
 
     return render(request, 'accounts/login.html', {'form': form})
+
+
+def reset_password(request):
+    """Direct instant password reset — zero OTP friction."""
+    if request.user.is_authenticated:
+        return redirect('dashboard:home')
+
+    if request.method == 'POST':
+        identifier = request.POST.get('identifier', '').strip()
+        new_password = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+
+        if not identifier or not new_password:
+            messages.error(request, 'Please provide your username or email and a new password.')
+            return render(request, 'accounts/reset_password.html')
+
+        if len(new_password) < 6:
+            messages.error(request, 'Password must be at least 6 characters long.')
+            return render(request, 'accounts/reset_password.html', {'identifier': identifier})
+
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match. Please try again.')
+            return render(request, 'accounts/reset_password.html', {'identifier': identifier})
+
+        user = User.objects.filter(username__iexact=identifier).first() or \
+               User.objects.filter(email__iexact=identifier).first()
+
+        if not user:
+            student_prof = StudentProfile.objects.filter(roll_number__iexact=identifier).select_related('user').first()
+            if student_prof and student_prof.user:
+                user = student_prof.user
+
+        if user:
+            user.set_password(new_password)
+            user.is_active = True
+            user.is_email_verified = True
+            user.save()
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f'🎉 Password reset successfully! Logged in as {user.first_name or user.username}.')
+            return redirect('dashboard:home')
+        else:
+            messages.error(request, f'No account found matching "{identifier}". Please check or create a new account.')
+            return render(request, 'accounts/reset_password.html', {'identifier': identifier})
+
+    return render(request, 'accounts/reset_password.html')
 
 
 

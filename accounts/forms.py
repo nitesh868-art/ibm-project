@@ -58,7 +58,7 @@ class StudentRegistrationForm(UserCreationForm):
         if StudentProfile.objects.filter(roll_number=roll_number).exists():
             raise forms.ValidationError(
                 f'A student with roll number "{roll_number}" is already registered. '
-                'Please check your roll number or contact your administrator.'
+                'Please sign in with this roll number or use password reset.'
             )
         return roll_number
 
@@ -67,7 +67,7 @@ class StudentRegistrationForm(UserCreationForm):
         email = self.cleaned_data.get('email', '').strip()
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError(
-                'This email address is already registered. Please use a different email or sign in.'
+                'This email address is already registered. Please sign in or use password reset if needed.'
             )
         return email
 
